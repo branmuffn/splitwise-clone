@@ -42,9 +42,14 @@ export async function getCurrentUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, email, display_name")
+    .select("id, email, display_name, default_currency")
     .eq("id", userId)
     .single();
 
-  return { id: userId, email: profile?.email ?? "", displayName: profile?.display_name ?? "" };
+  return {
+    id: userId,
+    email: profile?.email ?? "",
+    displayName: profile?.display_name ?? "",
+    defaultCurrency: profile?.default_currency ?? "USD",
+  };
 }

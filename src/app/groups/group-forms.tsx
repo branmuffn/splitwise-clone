@@ -2,9 +2,10 @@
 
 import { useActionState } from "react";
 import { createGroup, joinGroup } from "./actions";
-import { Button, Card, FormMessage, Input, Label } from "@/components/ui";
+import { Button, Card, FormMessage, Input, Label, Select } from "@/components/ui";
+import { CURRENCIES } from "@/lib/money";
 
-export function CreateGroupForm() {
+export function CreateGroupForm({ defaultCurrency }: { defaultCurrency: string }) {
   const [state, action, pending] = useActionState(createGroup, undefined);
   return (
     <Card>
@@ -13,6 +14,12 @@ export function CreateGroupForm() {
         <div>
           <Label htmlFor="group-name">Group name</Label>
           <Input id="group-name" name="name" placeholder="e.g. Beach trip" maxLength={80} required />
+        </div>
+        <div>
+          <Label htmlFor="group-currency">Default currency</Label>
+          <Select id="group-currency" name="currency" defaultValue={defaultCurrency}>
+            {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
+          </Select>
         </div>
         <FormMessage state={state} />
         <Button type="submit" disabled={pending} className="w-full">
