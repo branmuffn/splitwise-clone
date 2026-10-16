@@ -56,9 +56,22 @@ alter table public.expenses
                         'entertainment', 'travel', 'shopping', 'health', 'gifts', 'other')),
   add column if not exists notes text check (char_length(notes) <= 1000),
   add column if not exists expense_date date not null default current_date,
-  add column if not exists split_type text not null default 'equal'
-    check (split_type in ('equal', 'exact', 'percent', 'shares')),
-  add column if not exists updated_at timestamptz not null default now();
+  add column if not exists split_type text not null default 'equal',
+  add column if not exists updated_at timestamptz not null default now(),
+  -- Raw split inputs (percentages, shares, or itemized bill) so edits reopen exactly as entered.
+  add column if not exists split_details jsonb,
+  add column if not exists receipt_path text check (char_length(receipt_path) <= 300),
+  -- Recurring: the original expense is the template; copies are created as dates come due.
+  add column if not exists repeat_interval text not null default 'none',
+  add column if not exists repeat_anchor date,
+  add column if not exists repeat_count integer not null default 0,
+  add column if not exists recurring_source_id uuid references public.expenses (id) on delete set null;
+alter table public.expenses drop constraint if exists expenses_split_type_check;
+alter table public.expenses add constraint expenses_split_type_check
+  check (split_type in ('equal', 'exact', 'percent', 'shares', 'itemized'));
+alter table public.expenses drop constraint if exists expenses_repeat_interval_check;
+alter table public.expenses add constraint expenses_repeat_interval_check
+  check (repeat_interval in ('none', 'weekly', 'biweekly', 'monthly', 'yearly'));
 create index if not exists expenses_group_created_idx on public.expenses (group_id, created_at desc);
 -- Lets expense_splits reference (expense id, group id) together, so a split can't point
 -- at a different group than its expense.
@@ -102,6 +115,17 @@ create table if not exists public.activity (
   created_at timestamptz not null default now()
 );
 create index if not exists activity_group_idx on public.activity (group_id, created_at desc);
+
+create table if not exists public.expense_comments (
+  id         uuid primary key default gen_random_uuid(),
+  expense_id uuid not null,
+  group_id   uuid not null,
+  user_id    uuid not null default auth.uid() references public.profiles (id) on delete cascade,
+  body       text not null check (char_length(trim(body)) between 1 and 1000),
+  created_at timestamptz not null default now(),
+  foreign key (expense_id, group_id) references public.expenses (id, group_id) on delete cascade
+);
+create index if not exists expense_comments_expense_idx on public.expense_comments (expense_id, created_at);
 
 -- ============================================================
 -- Profile row on signup
@@ -359,6 +383,7 @@ $$;
 -- SECURITY INVOKER, so row level security still applies to every write.
 -- ============================================================
 
+drop function if exists public.save_expense(uuid, uuid, text, integer, text, uuid, text, text, date, text, jsonb);
 create or replace function public.save_expense(
   p_expense_id   uuid,
   p_group_id     uuid,
@@ -370,7 +395,9 @@ create or replace function public.save_expense(
   p_notes        text,
   p_expense_date date,
   p_split_type   text,
-  p_splits       jsonb
+  p_splits       jsonb,
+  p_split_details   jsonb default null,
+  p_repeat_interval text default 'none'
 )
 returns uuid
 language plpgsql
@@ -396,11 +423,14 @@ begin
 
   if eid is null then
     insert into public.expenses
-      (group_id, description, amount_cents, currency, paid_by, category, notes, expense_date, split_type)
+      (group_id, description, amount_cents, currency, paid_by, category, notes, expense_date, split_type,
+       split_details, repeat_interval, repeat_anchor, repeat_count)
     values
       (p_group_id, trim(p_description), p_amount_cents, p_currency, p_paid_by,
        coalesce(p_category, 'general'), nullif(trim(p_notes), ''),
-       coalesce(p_expense_date, current_date), p_split_type)
+       coalesce(p_expense_date, current_date), p_split_type,
+       p_split_details, coalesce(p_repeat_interval, 'none'),
+       case when coalesce(p_repeat_interval, 'none') <> 'none' then coalesce(p_expense_date, current_date) end, 0)
     returning id into eid;
   else
     update public.expenses set
@@ -412,6 +442,17 @@ begin
       notes        = nullif(trim(p_notes), ''),
       expense_date = coalesce(p_expense_date, current_date),
       split_type   = p_split_type,
+      split_details = p_split_details,
+      -- Changing the schedule (or the date) restarts it from this expense's date.
+      repeat_anchor = case
+        when coalesce(p_repeat_interval, 'none') = 'none' then null
+        when repeat_interval is distinct from p_repeat_interval or expense_date is distinct from p_expense_date
+          then coalesce(p_expense_date, current_date)
+        else repeat_anchor end,
+      repeat_count = case
+        when repeat_interval is distinct from p_repeat_interval or expense_date is distinct from p_expense_date
+          then 0 else repeat_count end,
+      repeat_interval = coalesce(p_repeat_interval, 'none'),
       updated_at   = now()
     where id = eid and group_id = p_group_id;
     if not found then
@@ -425,6 +466,62 @@ begin
   from jsonb_array_elements(p_splits) s;
 
   return eid;
+end;
+$$;
+
+-- Create any recurring copies that have come due (up to today) for a group.
+-- Called whenever a member opens the group or dashboard, so no cron job or secret key is needed.
+-- Row locks on the templates stop two simultaneous visitors from creating duplicates.
+create or replace function public.materialize_recurring(gid uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  t record;
+  step interval;
+  next_date date;
+  made integer := 0;
+  new_id uuid;
+begin
+  if not public.is_group_member(gid) then
+    return 0;
+  end if;
+
+  for t in
+    select * from public.expenses
+    where group_id = gid and repeat_interval <> 'none' and repeat_anchor is not null
+    for update
+  loop
+    step := case t.repeat_interval
+      when 'weekly' then interval '1 week'
+      when 'biweekly' then interval '2 weeks'
+      when 'monthly' then interval '1 month'
+      else interval '1 year' end;
+    loop
+      -- Always count from the anchor so month-end dates don't drift (Jan 31 -> Feb 28 -> Mar 31).
+      next_date := (t.repeat_anchor + step * (t.repeat_count + 1))::date;
+      exit when next_date > current_date or made >= 200;
+
+      insert into public.expenses
+        (group_id, description, amount_cents, currency, paid_by, category, notes, expense_date,
+         split_type, split_details, created_by, recurring_source_id)
+      values
+        (t.group_id, t.description, t.amount_cents, t.currency, t.paid_by, t.category, t.notes, next_date,
+         t.split_type, t.split_details, t.created_by, t.id)
+      returning id into new_id;
+
+      insert into public.expense_splits (expense_id, group_id, user_id, share_cents)
+      select new_id, t.group_id, user_id, share_cents
+      from public.expense_splits where expense_id = t.id;
+
+      t.repeat_count := t.repeat_count + 1;
+      update public.expenses set repeat_count = t.repeat_count where id = t.id;
+      made := made + 1;
+    end loop;
+  end loop;
+  return made;
 end;
 $$;
 
@@ -455,7 +552,13 @@ begin
       'expense_id', row_data ->> 'id',
       'description', row_data ->> 'description',
       'amount_cents', (row_data ->> 'amount_cents')::int,
-      'currency', row_data ->> 'currency');
+      'currency', row_data ->> 'currency',
+      'recurring', (row_data ->> 'recurring_source_id') is not null);
+    -- Bookkeeping updates (recurring counter, receipt path) aren't worth an activity entry.
+    if tg_op = 'UPDATE' and (to_jsonb(new) - 'repeat_count' - 'receipt_path' - 'updated_at')
+                          = (to_jsonb(old) - 'repeat_count' - 'receipt_path' - 'updated_at') then
+      return null;
+    end if;
   elsif tg_table_name = 'payments' then
     kind := 'payment_' || case tg_op when 'INSERT' then 'added' else 'deleted' end;
     details := jsonb_build_object(
@@ -469,6 +572,16 @@ begin
       when (row_data ->> 'user_id')::uuid = auth.uid() then 'member_left'
       else 'member_removed' end;
     details := jsonb_build_object('user_id', row_data ->> 'user_id');
+  elsif tg_table_name = 'expense_comments' then
+    -- Comments removed because their expense was deleted aren't separate events.
+    if not exists (select 1 from public.expenses where id = (row_data ->> 'expense_id')::uuid) then
+      return null;
+    end if;
+    kind := 'comment_' || case tg_op when 'INSERT' then 'added' else 'deleted' end;
+    details := jsonb_build_object(
+      'expense_id', row_data ->> 'expense_id',
+      'body', left(row_data ->> 'body', 120),
+      'description', (select description from public.expenses where id = (row_data ->> 'expense_id')::uuid));
   elsif tg_table_name = 'groups' then
     if new.name is not distinct from old.name then
       return null;
@@ -498,6 +611,11 @@ create trigger log_member_activity
   after insert or delete on public.group_members
   for each row execute function public.log_activity();
 
+drop trigger if exists log_comment_activity on public.expense_comments;
+create trigger log_comment_activity
+  after insert or delete on public.expense_comments
+  for each row execute function public.log_activity();
+
 drop trigger if exists log_group_activity on public.groups;
 create trigger log_group_activity
   after update on public.groups
@@ -517,7 +635,8 @@ revoke execute on function public.join_group(text)                     from publ
 revoke execute on function public.regenerate_join_code(uuid)           from public, anon;
 revoke execute on function public.leave_group(uuid)                    from public, anon;
 revoke execute on function public.remove_member(uuid, uuid)            from public, anon;
-revoke execute on function public.save_expense(uuid, uuid, text, integer, text, uuid, text, text, date, text, jsonb) from public, anon;
+revoke execute on function public.save_expense(uuid, uuid, text, integer, text, uuid, text, text, date, text, jsonb, jsonb, text) from public, anon;
+revoke execute on function public.materialize_recurring(uuid)          from public, anon;
 revoke execute on function public.log_activity()                       from public, anon, authenticated;
 grant  execute on function public.is_group_member(uuid)                to authenticated;
 grant  execute on function public.is_user_in_group(uuid, uuid)         to authenticated;
@@ -528,7 +647,8 @@ grant  execute on function public.join_group(text)                     to authen
 grant  execute on function public.regenerate_join_code(uuid)           to authenticated;
 grant  execute on function public.leave_group(uuid)                    to authenticated;
 grant  execute on function public.remove_member(uuid, uuid)            to authenticated;
-grant  execute on function public.save_expense(uuid, uuid, text, integer, text, uuid, text, text, date, text, jsonb) to authenticated;
+grant  execute on function public.save_expense(uuid, uuid, text, integer, text, uuid, text, text, date, text, jsonb, jsonb, text) to authenticated;
+grant  execute on function public.materialize_recurring(uuid)          to authenticated;
 
 -- ============================================================
 -- Row level security
@@ -541,6 +661,7 @@ alter table public.expenses       enable row level security;
 alter table public.expense_splits enable row level security;
 alter table public.payments       enable row level security;
 alter table public.activity       enable row level security;
+alter table public.expense_comments enable row level security;
 
 -- profiles: see yourself and anyone you share a group with; edit only yourself.
 drop policy if exists "profiles_select" on public.profiles;
@@ -651,6 +772,83 @@ drop policy if exists "activity_select" on public.activity;
 create policy "activity_select" on public.activity
   for select to authenticated
   using (public.is_group_member(group_id));
+
+-- expense_comments: members read; you write and delete only your own.
+drop policy if exists "expense_comments_select" on public.expense_comments;
+create policy "expense_comments_select" on public.expense_comments
+  for select to authenticated
+  using (public.is_group_member(group_id));
+
+drop policy if exists "expense_comments_insert" on public.expense_comments;
+create policy "expense_comments_insert" on public.expense_comments
+  for insert to authenticated
+  with check (public.is_group_member(group_id) and user_id = auth.uid());
+
+drop policy if exists "expense_comments_delete" on public.expense_comments;
+create policy "expense_comments_delete" on public.expense_comments
+  for delete to authenticated
+  using (user_id = auth.uid() and public.is_group_member(group_id));
+
+-- ============================================================
+-- Receipt photos: private Storage bucket. Files live at <group_id>/<expense_id>/<file>,
+-- and only members of that group can read, upload, or delete them.
+-- ============================================================
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('receipts', 'receipts', false, 5242880,
+        array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+-- First path segment as a group id, or null if it isn't a uuid.
+create or replace function public.receipt_group_id(object_name text)
+returns uuid
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when split_part(object_name, '/', 1) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+              then split_part(object_name, '/', 1)::uuid end;
+$$;
+
+drop policy if exists "receipts_select_member" on storage.objects;
+create policy "receipts_select_member" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));
+
+drop policy if exists "receipts_insert_member" on storage.objects;
+create policy "receipts_insert_member" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));
+
+drop policy if exists "receipts_delete_member" on storage.objects;
+create policy "receipts_delete_member" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));
+
+-- ============================================================
+-- Live updates: stream changes to these tables over Supabase Realtime
+-- (row level security still decides who receives each change).
+-- ============================================================
+
+do $$
+declare
+  t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['expenses', 'expense_splits', 'payments', 'group_members', 'expense_comments', 'groups'] loop
+      if not exists (
+        select 1 from pg_publication_tables
+        where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+      ) then
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      end if;
+    end loop;
+  end if;
+end;
+$$;
 
 -- ============================================================
 -- Upgrade existing data: give expenses created before splits existed an
