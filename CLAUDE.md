@@ -100,7 +100,38 @@ Parsing notes: streamed HTML arrives in pieces (`helpers.mjs` `assemble()` stitc
 segments), and every page contains Next's hidden "could not be found" template, so detect a real
 404 with `isNotFound()`.
 
-## Ideas not built yet
+## Current status (as of 2026-10-16)
 
-Server-sent reminder emails (needs an email provider key such as Resend), friends/1:1 expenses
-outside groups, installable PWA, dark mode, avatars, CI running the e2e suite on pull requests.
+- **Everything below is built, deployed, and passing** on the live site: core e2e (59 checks),
+  extras e2e (48 checks), 23 unit-test groups, and the SQL permission tests.
+  - v1: auth, groups with join codes, equal-split expenses, balances.
+  - v2: custom splits, multi-currency, categories, edit/delete, payments, activity, group
+    settings, dashboard totals, profile, password reset.
+  - v3: currency conversion, receipts, recurring, comments, search/filters, CSV, charts,
+    reminders, Realtime, itemized bills.
+- The live database matches `supabase/schema.sql` (the v3 version, with the guarded
+  storage/realtime blocks).
+- **Not yet verified by a human in a real browser** (automated tests can't): itemized-bill UI
+  interactions, phone camera receipt upload and in-browser resizing, the live-update dot and
+  auto-refresh across two browsers, the Remind button opening a mail app, CSV opening in Excel or
+  Google Sheets, and chart hover. If the user reports problems, start there.
+- Test accounts (`claude-e2e-*@example.com`) may still exist in Supabase; the cleanup SQL is above.
+- `RESUME.md` is the user's plain-language guide to stopping and restarting; keep it current if
+  URLs, services, or workflow change.
+
+## What's next (user said "good enough for now"; pick from these when they return)
+
+Ask the user which they want; don't start unprompted.
+
+1. **Server-sent reminder emails**, plus optional weekly automatic nudges. Needs an email
+   provider (e.g. Resend): the user creates an account and adds `RESEND_API_KEY` to Vercel
+   themselves. Call its HTTP API with `fetch` (no SDK, per the no-extra-libraries rule). Weekly
+   nudges need a Vercel Cron job, and that needs a way to read balances without the service key
+   (e.g. a SECURITY DEFINER RPC guarded by a cron secret).
+2. **Friends / 1-on-1 expenses** outside groups (like Splitwise's Friends tab). Simplest model:
+   an implicit two-person group per friend pair.
+3. **Installable PWA**: web app manifest, icons, and an offline view of balances.
+4. **Polish**: dark mode (tokens are in `globals.css`; charts would need dark-validated colors via
+   the dataviz skill), avatars/profile photos (Storage), and an "undo delete" for expenses.
+5. **CI**: a GitHub Action running `npm test`, lint, build, and the e2e suite against a Vercel
+   preview deployment on each pull request.

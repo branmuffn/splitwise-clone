@@ -2,6 +2,8 @@
 
 Frontier Commons build bootcamp, Week 3. Live: https://splitwise-clone-three-theta.vercel.app
 
+**Coming back to this project?** See [RESUME.md](RESUME.md) for how to restart, where everything lives, and what to say to Claude.
+
 Next.js (App Router) + TypeScript + Tailwind, Supabase for auth and data, deployed on Vercel.
 Pushing to `main` on GitHub deploys to production automatically.
 
