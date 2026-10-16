@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LiveRefresh } from "@/components/live-refresh";
 import { LocalTime } from "@/components/local-time";
 import { PageShell } from "@/components/page-shell";
 import { BackLink, Card } from "@/components/ui";
@@ -24,6 +25,8 @@ const icons: Record<string, string> = {
   member_left: "🚪",
   member_removed: "🚫",
   group_renamed: "🏷️",
+  comment_added: "💬",
+  comment_deleted: "💬",
 };
 
 async function Activity({ params }: Pick<PageProps<"/groups/[id]/activity">, "params">) {
@@ -42,7 +45,8 @@ async function Activity({ params }: Pick<PageProps<"/groups/[id]/activity">, "pa
   const describe = (kind: string, actor: string | null, d: Record<string, unknown>) => {
     const a = who(actor);
     switch (kind) {
-      case "expense_added": return <>{a} added <b>“{String(d.description)}”</b> ({money(d)})</>;
+      case "expense_added":
+        return d.recurring ? <>Recurring expense <b>“{String(d.description)}”</b> ({money(d)}) was added automatically</> : <>{a} added <b>“{String(d.description)}”</b> ({money(d)})</>;
       case "expense_updated": return <>{a} updated <b>“{String(d.description)}”</b> ({money(d)})</>;
       case "expense_deleted": return <>{a} deleted <b>“{String(d.description)}”</b> ({money(d)})</>;
       case "payment_added": return <>{a} recorded a payment: {who(d.from_user)} paid {d.to_user === user.id ? "you" : who(d.to_user)} {money(d)}</>;
@@ -50,6 +54,8 @@ async function Activity({ params }: Pick<PageProps<"/groups/[id]/activity">, "pa
       case "member_joined": return <>{who(d.user_id)} joined the group</>;
       case "member_left": return <>{who(d.user_id)} left the group</>;
       case "member_removed": return <>{a} removed {who(d.user_id)}</>;
+      case "comment_added": return <>{a} commented on <b>“{String(d.description ?? "an expense")}”</b>: “{String(d.body)}”</>;
+      case "comment_deleted": return <>{a} deleted a comment on <b>“{String(d.description ?? "an expense")}”</b></>;
       case "group_renamed": return <>{a} renamed the group from “{String(d.from)}” to “{String(d.to)}”</>;
       default: return <>{a}: {kind}</>;
     }
@@ -58,7 +64,10 @@ async function Activity({ params }: Pick<PageProps<"/groups/[id]/activity">, "pa
 
   return (
     <>
-      <BackLink href={`/groups/${id}`}>{group.name}</BackLink>
+      <div className="flex items-center justify-between">
+        <BackLink href={`/groups/${id}`}>{group.name}</BackLink>
+        <LiveRefresh groupId={id} />
+      </div>
       <h1 className="text-2xl font-semibold">Activity</h1>
       <Card className="divide-y divide-gray-100 p-0">
         {(items ?? []).length === 0 && <p className="px-5 py-6 text-center text-gray-500">No activity yet.</p>}

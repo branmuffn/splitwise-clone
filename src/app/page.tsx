@@ -2,7 +2,9 @@ import Link from "next/link";
 import { PageShell } from "@/components/page-shell";
 import { Card, FormMessage, SectionTitle } from "@/components/ui";
 import { computeBalances, netFor } from "@/lib/balances";
+import { convertMinor } from "@/lib/convert";
 import { formatMoney } from "@/lib/money";
+import { getRates } from "@/lib/rates";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { CreateGroupForm, JoinGroupForm } from "./groups/group-forms";
 
@@ -19,10 +21,14 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
   const user = await getCurrentUser();
   if (!user) return null;
   const supabase = await createClient();
-  const [{ data: groups }, { data: expenses }, { data: payments }] = await Promise.all([
+  // Add any recurring expenses that have come due before computing balances.
+  const { data: myGroups } = await supabase.from("group_members").select("group_id").eq("user_id", user.id);
+  await Promise.all((myGroups ?? []).map((g) => supabase.rpc("materialize_recurring", { gid: g.group_id })));
+  const [{ data: groups }, { data: expenses }, { data: payments }, rates] = await Promise.all([
     supabase.from("groups").select("id, name, group_members(count)").order("created_at", { ascending: false }),
     supabase.from("expenses").select("group_id, amount_cents, currency, paid_by, expense_splits(user_id, share_cents)"),
     supabase.from("payments").select("group_id, from_user, to_user, amount_cents, currency"),
+    getRates(),
   ]);
 
   const perGroup = new Map(
@@ -50,6 +56,16 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
   const list = (m: Map<string, number>) =>
     m.size === 0 ? <span className="text-gray-400">—</span> : [...m].map(([c, v]) => <span key={c} className="block">{formatMoney(v, c)}</span>);
 
+  // One approximate overall number in the user's default currency, when there's more than one currency.
+  const home = user.defaultCurrency;
+  const allCurrencies = new Set([...owed.keys(), ...owe.keys()]);
+  let overall: number | null = null;
+  if (rates && (allCurrencies.size > 1 || (allCurrencies.size === 1 && !allCurrencies.has(home)))) {
+    overall = 0;
+    for (const [c, v] of owed) overall += convertMinor(v, c, home, rates.rates) ?? 0;
+    for (const [c, v] of owe) overall -= convertMinor(v, c, home, rates.rates) ?? 0;
+  }
+
   const notice = sp.left ? "You left the group." : sp.deleted ? "Group deleted." : null;
 
   return (
@@ -66,6 +82,16 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">You owe</p>
           <p className="mt-1 text-lg font-semibold text-owe">{list(owe)}</p>
         </div>
+        {overall !== null && (
+          <p className="col-span-2 border-t border-gray-100 px-4 py-2 text-sm text-gray-600">
+            Overall: {overall === 0 ? "settled up" : overall > 0 ? "you are owed" : "you owe"}{" "}
+            {overall !== 0 && <b className={overall > 0 ? "text-brand-600" : "text-owe"}>≈ {formatMoney(Math.abs(overall), home)}</b>}
+            <span className="block text-xs text-gray-400">
+              Converted to {home} at today&apos;s rates ·{" "}
+              <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" className="underline">Rates by Exchange Rate API</a>
+            </span>
+          </p>
+        )}
       </Card>
 
       <section>
