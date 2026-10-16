@@ -1,9 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "@/lib/database.types";
 
 // Create a new client per request (never share one across requests).
 export async function createClient() {
+  // Supabase reads the clock (Date.now) while checking the session. With Cache Components,
+  // that's only allowed at request time, so mark this as request-time work first.
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
