@@ -12,16 +12,28 @@ Pushing to `main` on GitHub deploys to production automatically.
 - **Groups**: create (auto 6-character join code) or join by code; rename, set a default currency,
   regenerate the code, remove settled members, leave (must be settled), delete (creator only).
 - **Expenses**: description, amount, currency, payer, category, date, notes. Split equally among any
-  subset, by exact amounts, by percentages, or by shares, with a live per-person preview.
-  View, edit, and delete.
+  subset, by exact amounts, by percentages, by shares, or **itemized** (items per person, tax and tip
+  shared proportionally), with a live per-person preview. View, edit, and delete.
+- **Receipts**: attach a photo or PDF (private Supabase Storage; members only).
+- **Recurring expenses**: weekly, every 2 weeks, monthly, or yearly; due copies are added
+  automatically when anyone in the group opens the app.
+- **Comments** on each expense.
 - **Balances**: per-member, per-currency net balances. Suggested payments either simplified (fewest
   transfers) or pairwise ("who owes whom"), toggled per group.
 - **Settle up**: record payments (prefilled from suggestions), delete them to undo.
-- **Activity feed** per group: expenses added/edited/deleted, payments, joins/leaves/removals, renames.
-- **Dashboard**: your total "you are owed" / "you owe" across groups, per currency.
+- **Activity feed** per group: expenses added/edited/deleted, payments, comments, joins/leaves/removals,
+  renames, automatic recurring adds.
+- **Dashboard**: your total "you are owed" / "you owe" across groups, per currency, plus an approximate
+  overall total converted to your default currency.
+- **Currency conversion**: view a group's balances and suggested payments all in its default currency
+  at today's rates (open.er-api.com, no key needed).
+- **Search & filters** (text, category, person, currency, dates) and **CSV export**.
+- **Charts**: spending by category, by month, and paid-vs-share per person.
+- **Reminders**: "Remind" opens a prefilled email to whoever owes you.
+- **Live updates**: group pages refresh automatically via Supabase Realtime.
 
-Not built: currency conversion (balances stay per currency, like Splitwise's default), receipt photos,
-real payments, notifications, recurring expenses, comments, charts.
+Not built: real payments, push notifications, and server-sent email (reminders use your own email app;
+sending from the server would need an email provider API key).
 
 ## Setup
 
