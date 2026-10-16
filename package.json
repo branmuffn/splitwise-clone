@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test src/lib/*.test.ts"
+    "test": "node --test src/lib/*.test.ts",
+    "test:e2e": "node tests/e2e/core.mjs && node tests/e2e/extras.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
