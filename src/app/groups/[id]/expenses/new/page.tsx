@@ -1,6 +1,7 @@
 import { PageShell } from "@/components/page-shell";
 import { BackLink } from "@/components/ui";
 import { loadGroup } from "@/lib/group-data";
+import { saveExpense } from "../../../expense-actions";
 import { ExpenseForm } from "../../../expense-form";
 
 export default function NewExpensePage({ params }: PageProps<"/groups/[id]/expenses/new">) {
@@ -19,7 +20,7 @@ async function NewExpense({ params }: Pick<PageProps<"/groups/[id]/expenses/new"
       <BackLink href={`/groups/${id}`}>{group.name}</BackLink>
       <h1 className="text-2xl font-semibold">Add an expense</h1>
       <ExpenseForm
-        groupId={id}
+        action={saveExpense.bind(null, id, null)}
         expenseId={null}
         members={members}
         currentUserId={user.id}

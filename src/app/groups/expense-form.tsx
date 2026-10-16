@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { saveExpense } from "./expense-actions";
+import type { FormState } from "@/app/auth/actions";
 import { Avatar, Button, Card, FormMessage, Input, Label, Select, Textarea } from "@/components/ui";
 import { CATEGORIES } from "@/lib/categories";
 import { CURRENCIES, formatMoney, parseAmount } from "@/lib/money";
@@ -25,19 +25,21 @@ export type ExpenseDefaults = {
 const valueSuffix: Record<SplitType, string> = { equal: "", exact: "", percent: "%", shares: "share(s)" };
 
 export function ExpenseForm({
-  groupId,
+  action: saveAction,
   expenseId,
   members,
   currentUserId,
   defaults,
 }: {
-  groupId: string;
+  // saveExpense bound to (groupId, expenseId) in the Server Component. Binding a server action
+  // inside a client component made no-JS error responses hang, so it's bound on the server.
+  action: (prev: FormState, formData: FormData) => Promise<FormState>;
   expenseId: string | null;
   members: Member[];
   currentUserId: string;
   defaults: ExpenseDefaults;
 }) {
-  const [state, action, pending] = useActionState(saveExpense.bind(null, groupId, expenseId), undefined);
+  const [state, action, pending] = useActionState(saveAction, undefined);
 
   const [amountText, setAmountText] = useState(defaults.amount);
   const [currency, setCurrency] = useState(defaults.currency);

@@ -3,6 +3,7 @@ import { PageShell } from "@/components/page-shell";
 import { BackLink } from "@/components/ui";
 import { loadGroup } from "@/lib/group-data";
 import { toDecimalString } from "@/lib/money";
+import { saveExpense } from "../../../../expense-actions";
 import { ExpenseForm } from "../../../../expense-form";
 
 export default function EditExpensePage({ params }: PageProps<"/groups/[id]/expenses/[expenseId]/edit">) {
@@ -38,7 +39,7 @@ async function EditExpense({ params }: Pick<PageProps<"/groups/[id]/expenses/[ex
       <BackLink href={`/groups/${id}/expenses/${e.id}`}>Back to expense</BackLink>
       <h1 className="text-2xl font-semibold">Edit expense</h1>
       <ExpenseForm
-        groupId={id}
+        action={saveExpense.bind(null, id, e.id)}
         expenseId={e.id}
         members={members}
         currentUserId={user.id}

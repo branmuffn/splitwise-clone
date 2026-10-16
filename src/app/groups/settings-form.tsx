@@ -1,22 +1,23 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateGroupSettings } from "./actions";
+import type { FormState } from "@/app/auth/actions";
 import { Button, FormMessage, Input, Label, Select } from "@/components/ui";
 import { CURRENCIES } from "@/lib/money";
 
 export function GroupSettingsForm({
-  groupId,
+  action: saveAction,
   name,
   currency,
   simplify,
 }: {
-  groupId: string;
+  // updateGroupSettings bound to the group id in the Server Component (see ExpenseForm).
+  action: (prev: FormState, formData: FormData) => Promise<FormState>;
   name: string;
   currency: string;
   simplify: boolean;
 }) {
-  const [state, action, pending] = useActionState(updateGroupSettings.bind(null, groupId), undefined);
+  const [state, action, pending] = useActionState(saveAction, undefined);
   return (
     <form action={action} className="space-y-4">
       <div>

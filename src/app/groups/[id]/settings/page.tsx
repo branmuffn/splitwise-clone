@@ -3,7 +3,7 @@ import { PageShell } from "@/components/page-shell";
 import { Avatar, BackLink, Card, FormMessage, SectionTitle } from "@/components/ui";
 import { loadGroup } from "@/lib/group-data";
 import { formatMoney } from "@/lib/money";
-import { deleteGroup, leaveGroup, regenerateCode, removeMember } from "../../actions";
+import { deleteGroup, leaveGroup, regenerateCode, removeMember, updateGroupSettings } from "../../actions";
 import { CopyCode } from "../../copy-code";
 import { GroupSettingsForm } from "../../settings-form";
 
@@ -35,7 +35,7 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
       {typeof saved === "string" && savedMessages[saved] && <FormMessage state={{ message: savedMessages[saved] }} />}
 
       <Card>
-        <GroupSettingsForm groupId={id} name={group.name} currency={group.default_currency} simplify={group.simplify_debts} />
+        <GroupSettingsForm action={updateGroupSettings.bind(null, id)} name={group.name} currency={group.default_currency} simplify={group.simplify_debts} />
       </Card>
 
       <section>

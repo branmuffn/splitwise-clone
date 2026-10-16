@@ -3,6 +3,7 @@ import { PageShell } from "@/components/page-shell";
 import { BackLink, Card, SectionTitle } from "@/components/ui";
 import { loadGroup } from "@/lib/group-data";
 import { formatMoney, isCurrency, toDecimalString } from "@/lib/money";
+import { recordPayment } from "../../payment-actions";
 import { SettleForm } from "../../settle-form";
 
 export default function SettlePage({ params, searchParams }: PageProps<"/groups/[id]/settle">) {
@@ -36,7 +37,7 @@ async function Settle({ params, searchParams }: Pick<PageProps<"/groups/[id]/set
       ) : (
         <SettleForm
           key={`${from}-${to}-${amount}-${currency}`}
-          groupId={id}
+          action={recordPayment.bind(null, id)}
           members={members}
           currentUserId={user.id}
           defaults={{ from, to, amount, currency, date: new Date().toISOString().slice(0, 10) }}

@@ -1,24 +1,25 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { recordPayment } from "./payment-actions";
+import type { FormState } from "@/app/auth/actions";
 import { Button, Card, FormMessage, Input, Label, Select } from "@/components/ui";
 import { CURRENCIES } from "@/lib/money";
 
 type Member = { id: string; name: string };
 
 export function SettleForm({
-  groupId,
+  action: recordAction,
   members,
   currentUserId,
   defaults,
 }: {
-  groupId: string;
+  // recordPayment bound to the group id in the Server Component (see ExpenseForm).
+  action: (prev: FormState, formData: FormData) => Promise<FormState>;
   members: Member[];
   currentUserId: string;
   defaults: { from: string; to: string; amount: string; currency: string; date: string };
 }) {
-  const [state, action, pending] = useActionState(recordPayment.bind(null, groupId), undefined);
+  const [state, action, pending] = useActionState(recordAction, undefined);
   const [date, setDate] = useState(defaults.date);
   useEffect(() => {
     const d = new Date();
