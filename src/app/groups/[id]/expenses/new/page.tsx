@@ -35,6 +35,11 @@ async function NewExpense({ params }: Pick<PageProps<"/groups/[id]/expenses/new"
           splitType: "equal",
           included: members.map((m) => m.id),
           values: {},
+          items: [0, 1, 2].map(() => ({ name: "", price: "", who: members.map((m) => m.id) })),
+          tax: "",
+          tip: "",
+          repeat: "none",
+          hasReceipt: false,
         }}
       />
     </>

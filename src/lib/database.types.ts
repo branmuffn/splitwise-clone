@@ -1,4 +1,6 @@
 // Hand-written to match supabase/schema.sql.
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+export type RepeatInterval = "none" | "weekly" | "biweekly" | "monthly" | "yearly";
 type Rel<FK extends string, Col extends string, Ref extends string> = {
   foreignKeyName: FK;
   columns: [Col];
@@ -50,13 +52,19 @@ export type Database = {
           category: string;
           notes: string | null;
           expense_date: string;
-          split_type: "equal" | "exact" | "percent" | "shares";
+          split_type: "equal" | "exact" | "percent" | "shares" | "itemized";
+          split_details: Json | null;
+          receipt_path: string | null;
+          repeat_interval: RepeatInterval;
+          repeat_anchor: string | null;
+          repeat_count: number;
+          recurring_source_id: string | null;
           created_by: string;
           created_at: string;
           updated_at: string;
         };
         Insert: never; // use the save_expense RPC
-        Update: never;
+        Update: { receipt_path?: string | null; repeat_interval?: RepeatInterval; repeat_anchor?: string | null };
         Relationships: [
           Rel<"expenses_group_id_fkey", "group_id", "groups">,
           Rel<"expenses_paid_by_fkey", "paid_by", "profiles">,
@@ -103,6 +111,21 @@ export type Database = {
         Update: never;
         Relationships: [Rel<"payments_group_id_fkey", "group_id", "groups">];
       };
+      expense_comments: {
+        Row: { id: string; expense_id: string; group_id: string; user_id: string; body: string; created_at: string };
+        Insert: { expense_id: string; group_id: string; body: string };
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "expense_comments_expense_id_group_id_fkey";
+            columns: ["expense_id", "group_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
+            referencedColumns: ["id", "group_id"];
+          },
+          Rel<"expense_comments_user_id_fkey", "user_id", "profiles">,
+        ];
+      };
       activity: {
         Row: {
           id: number;
@@ -137,9 +160,12 @@ export type Database = {
           p_expense_date: string;
           p_split_type: string;
           p_splits: { user_id: string; share_cents: number }[];
+          p_split_details?: Json | null;
+          p_repeat_interval?: RepeatInterval;
         };
         Returns: string;
       };
+      materialize_recurring: { Args: { gid: string }; Returns: number };
       is_group_member: { Args: { gid: string }; Returns: boolean };
     };
     Enums: Record<never, never>;

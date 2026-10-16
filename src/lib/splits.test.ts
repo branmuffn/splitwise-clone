@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { allocate, computeSplit } from "./splits.ts";
+import { allocate, computeItemized, computeSplit } from "./splits.ts";
 
 const ids = ["a", "b", "c"];
 const none = {};
@@ -48,4 +48,33 @@ test("shares are proportional", () => {
 
 test("needs a positive amount", () => {
   assert.equal(shares(computeSplit("equal", 0, "USD", ids, new Set(ids), none)), "Enter the total amount first.");
+});
+
+test("itemized: items split among who had them, tax+tip proportional", () => {
+  const r = computeItemized(
+    {
+      items: [
+        { name: "Burger", price_cents: 1500, user_ids: ["a"] },
+        { name: "Salad", price_cents: 1000, user_ids: ["b"] },
+        { name: "Fries", price_cents: 600, user_ids: ["a", "b", "c"] },
+      ],
+      tax_cents: 310,
+      tip_cents: 620,
+    },
+    ids,
+  );
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  // subtotals a 1700, b 1200, c 200 (=3100); extras 930 -> a 510, b 360, c 60
+  assert.deepEqual(Object.fromEntries(r.shares.map((s) => [s.user_id, s.share_cents])), { a: 2210, b: 1560, c: 260 });
+  assert.equal(r.total, 1500 + 1000 + 600 + 310 + 620);
+});
+
+test("itemized validation", () => {
+  const bad = (items: { name: string; price_cents: number; user_ids: string[] }[]) =>
+    computeItemized({ items, tax_cents: 0, tip_cents: 0 }, ids);
+  assert.deepEqual(bad([]), { ok: false, error: "Add at least one item." });
+  assert.deepEqual(bad([{ name: "Wine", price_cents: 0, user_ids: ["a"] }]), { ok: false, error: "Enter a price for “Wine”." });
+  assert.deepEqual(bad([{ name: "Wine", price_cents: 100, user_ids: [] }]), { ok: false, error: "Choose who had “Wine”." });
+  assert.deepEqual(bad([{ name: "", price_cents: 0, user_ids: [] }]), { ok: false, error: "Add at least one item." }); // blank rows ignored
 });

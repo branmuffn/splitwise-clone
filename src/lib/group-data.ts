@@ -13,9 +13,19 @@ export type Member = { id: string; name: string; email: string };
 // Everything a group page needs, loaded under the current user's RLS.
 // 404s if the group doesn't exist or the user isn't a member.
 export async function loadGroup(groupId: string) {
+  const data = await tryLoadGroup(groupId);
+  if (!data) notFound();
+  return data;
+}
+
+// Same, but returns null instead of 404ing (for route handlers).
+export async function tryLoadGroup(groupId: string) {
+  if (!/^[0-9a-f-]{36}$/.test(groupId)) return null;
   const user = await getCurrentUser();
-  if (!user) notFound();
+  if (!user) return null;
   const supabase = await createClient();
+  // Create any recurring expenses that have come due (no-op for non-members).
+  await supabase.rpc("materialize_recurring", { gid: groupId });
 
   const [{ data: group }, { data: memberRows }, { data: expenseRows }, { data: payments }] = await Promise.all([
     supabase.from("groups").select("*").eq("id", groupId).maybeSingle(),
@@ -27,7 +37,7 @@ export async function loadGroup(groupId: string) {
       .order("user_id"),
     supabase
       .from("expenses")
-      .select("*, expense_splits(user_id, share_cents)")
+      .select("*, expense_splits(user_id, share_cents), expense_comments(count)")
       .eq("group_id", groupId)
       .order("expense_date", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -38,7 +48,7 @@ export async function loadGroup(groupId: string) {
       .order("paid_on", { ascending: false })
       .order("created_at", { ascending: false }),
   ]);
-  if (!group) notFound();
+  if (!group) return null;
 
   const members: Member[] = (memberRows ?? []).map((m) => ({
     id: m.user_id,
@@ -47,8 +57,9 @@ export async function loadGroup(groupId: string) {
   }));
   const memberIds = members.map((m) => m.id);
 
-  const expenses = (expenseRows ?? []).map(({ expense_splits, ...e }) => ({
+  const expenses = (expenseRows ?? []).map(({ expense_splits, expense_comments, ...e }) => ({
     ...e,
+    commentCount: expense_comments[0]?.count ?? 0,
     // Expenses saved by the old app have no splits yet: treat as equal among current members.
     splits:
       expense_splits.length > 0
@@ -68,4 +79,4 @@ export async function loadGroup(groupId: string) {
   return { user, group, members, expenses, payments: payments ?? [], balances, transfers, nameOf, youOr };
 }
 
-export type GroupData = Awaited<ReturnType<typeof loadGroup>>;
+export type GroupData = NonNullable<Awaited<ReturnType<typeof tryLoadGroup>>>;

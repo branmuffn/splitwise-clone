@@ -4,10 +4,12 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import type { FormState } from "@/app/auth/actions";
 import { Avatar, Button, Card, FormMessage, Input, Label, Select, Textarea } from "@/components/ui";
 import { CATEGORIES } from "@/lib/categories";
-import { CURRENCIES, formatMoney, parseAmount } from "@/lib/money";
-import { computeSplit, SPLIT_TYPES, type SplitType } from "@/lib/splits";
+import { CURRENCIES, formatMoney, parseAmount, toDecimalString } from "@/lib/money";
+import { REPEAT_OPTIONS } from "@/lib/recurring";
+import { computeItemized, computeSplit, SPLIT_TYPES, type SplitType } from "@/lib/splits";
 
 type Member = { id: string; name: string };
+type ItemRow = { name: string; price: string; who: string[] };
 
 export type ExpenseDefaults = {
   description: string;
@@ -20,9 +22,33 @@ export type ExpenseDefaults = {
   splitType: SplitType;
   included: string[];
   values: Record<string, string>;
+  items: ItemRow[];
+  tax: string;
+  tip: string;
+  repeat: string;
+  hasReceipt: boolean;
 };
 
-const valueSuffix: Record<SplitType, string> = { equal: "", exact: "", percent: "%", shares: "share(s)" };
+const valueSuffix: Record<SplitType, string> = { equal: "", exact: "", percent: "%", shares: "share(s)", itemized: "" };
+const MAX_RECEIPT_BYTES = 4 * 1024 * 1024;
+
+// Shrink big photos in the browser so uploads stay small (phones produce 5–10 MB images).
+async function shrinkImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif" || file.size < 1_000_000) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
 
 export function ExpenseForm({
   action: saveAction,
@@ -47,6 +73,10 @@ export function ExpenseForm({
   const [included, setIncluded] = useState(() => new Set(defaults.included));
   const [values, setValues] = useState<Record<string, string>>(defaults.values);
   const [date, setDate] = useState(defaults.date);
+  const [items, setItems] = useState<ItemRow[]>(defaults.items);
+  const [tax, setTax] = useState(defaults.tax);
+  const [tip, setTip] = useState(defaults.tip);
+  const [receiptNote, setReceiptNote] = useState("");
 
   // New expenses default to today in the viewer's timezone, not the server's.
   useEffect(() => {
@@ -57,9 +87,20 @@ export function ExpenseForm({
     }
   }, [expenseId]);
 
-  const amount = parseAmount(amountText, currency) ?? 0;
   const ids = useMemo(() => members.map((m) => m.id), [members]);
-  const preview = computeSplit(splitType, amount, currency, ids, included, values);
+  const itemized = splitType === "itemized";
+  const itemizedResult = itemized
+    ? computeItemized(
+        {
+          items: items.map((i) => ({ name: i.name, price_cents: parseAmount(i.price, currency, true) ?? -1, user_ids: i.who })),
+          tax_cents: parseAmount(tax || "0", currency, true) ?? -1,
+          tip_cents: parseAmount(tip || "0", currency, true) ?? -1,
+        },
+        ids,
+      )
+    : null;
+  const amount = itemized ? (itemizedResult?.ok ? itemizedResult.total : 0) : (parseAmount(amountText, currency) ?? 0);
+  const preview = itemized ? itemizedResult! : computeSplit(splitType, amount, currency, ids, included, values);
   const shareOf = (id: string) => (preview.ok ? (preview.shares.find((s) => s.user_id === id)?.share_cents ?? 0) : null);
 
   const fillEvenly = () => {
@@ -70,6 +111,7 @@ export function ExpenseForm({
       setValues(Object.fromEntries(ids.map((id) => [id, "1"])));
     }
   };
+  const setItem = (i: number, patch: Partial<ItemRow>) => setItems(items.map((row, k) => (k === i ? { ...row, ...patch } : row)));
 
   return (
     <form action={action} className="space-y-4">
@@ -80,16 +122,23 @@ export function ExpenseForm({
         </div>
         <div className="grid grid-cols-[1fr_auto] gap-3">
           <div>
-            <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              name="amount"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amountText}
-              onChange={(e) => setAmountText(e.target.value)}
-              required
-            />
+            <Label htmlFor="amount">Amount{itemized && " (from items)"}</Label>
+            {itemized ? (
+              <>
+                <Input id="amount" value={amount ? toDecimalString(amount, currency) : ""} placeholder="0.00" readOnly className="bg-gray-50" />
+                <input type="hidden" name="amount" value={amount ? toDecimalString(amount, currency) : ""} />
+              </>
+            ) : (
+              <Input
+                id="amount"
+                name="amount"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={amountText}
+                onChange={(e) => setAmountText(e.target.value)}
+                required
+              />
+            )}
           </div>
           <div>
             <Label htmlFor="currency">Currency</Label>
@@ -100,7 +149,7 @@ export function ExpenseForm({
             </Select>
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="paid_by">Paid by</Label>
             <Select id="paid_by" name="paid_by" defaultValue={defaults.paidBy}>
@@ -121,6 +170,12 @@ export function ExpenseForm({
             <Label htmlFor="expense_date">Date</Label>
             <Input id="expense_date" name="expense_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
+          <div>
+            <Label htmlFor="repeat_interval">Repeat</Label>
+            <Select id="repeat_interval" name="repeat_interval" defaultValue={defaults.repeat}>
+              {REPEAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </Select>
+          </div>
         </div>
       </Card>
 
@@ -133,7 +188,7 @@ export function ExpenseForm({
             </button>
           )}
         </div>
-        <div role="radiogroup" aria-label="Split type" className="grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 sm:grid-cols-4">
+        <div role="radiogroup" aria-label="Split type" className="grid grid-cols-3 gap-1 rounded-lg bg-gray-100 p-1 sm:grid-cols-5">
           {SPLIT_TYPES.map((t) => (
             <label
               key={t.value}
@@ -153,6 +208,65 @@ export function ExpenseForm({
             </label>
           ))}
         </div>
+
+        {itemized && (
+          <div className="space-y-3">
+            <input type="hidden" name="item_count" value={items.length} />
+            {items.map((item, i) => (
+              <div key={i} className="rounded-lg border border-gray-200 p-3">
+                <div className="grid grid-cols-[1fr_7rem_auto] gap-2">
+                  <Input name={`item_${i}_name`} placeholder={`Item ${i + 1}`} value={item.name} onChange={(e) => setItem(i, { name: e.target.value })} aria-label={`Item ${i + 1} name`} maxLength={80} />
+                  <Input name={`item_${i}_price`} inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => setItem(i, { price: e.target.value })} aria-label={`Item ${i + 1} price`} className="text-right" />
+                  <button
+                    type="button"
+                    onClick={() => setItems(items.filter((_, k) => k !== i))}
+                    className="rounded-md px-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                    aria-label={`Remove item ${i + 1}`}
+                    disabled={items.length === 1}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {members.map((m) => {
+                    const on = item.who.includes(m.id);
+                    return (
+                      <label key={m.id} className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition has-focus-visible:ring-2 has-focus-visible:ring-brand-500 ${on ? "border-brand-500 bg-brand-50 text-brand-700" : "border-gray-200 text-gray-500"}`}>
+                        <input
+                          type="checkbox"
+                          name={`item_${i}_who_${m.id}`}
+                          checked={on}
+                          onChange={(e) => setItem(i, { who: e.target.checked ? [...item.who, m.id] : item.who.filter((x) => x !== m.id) })}
+                          className="sr-only"
+                        />
+                        {m.id === currentUserId ? "You" : m.name}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setItems([...items, { name: "", price: "", who: ids }])}
+              className="text-sm font-semibold text-brand-600 hover:underline"
+              disabled={items.length >= 50}
+            >
+              + Add item
+            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="tax">Tax</Label>
+                <Input id="tax" name="tax" inputMode="decimal" placeholder="0.00" value={tax} onChange={(e) => setTax(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="tip">Tip</Label>
+                <Input id="tip" name="tip" inputMode="decimal" placeholder="0.00" value={tip} onChange={(e) => setTip(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">Each item is split among the people who had it. Tax and tip are shared in proportion to what each person ordered.</p>
+          </div>
+        )}
 
         <ul className="divide-y divide-gray-100">
           {members.map((m) => {
@@ -179,7 +293,7 @@ export function ExpenseForm({
                   {m.name}
                   {m.id === currentUserId && <span className="text-gray-400"> (you)</span>}
                 </label>
-                {splitType !== "equal" && (
+                {splitType !== "equal" && !itemized && (
                   <span className="flex items-center gap-1.5">
                     <Input
                       id={`value_${m.id}`}
@@ -200,12 +314,47 @@ export function ExpenseForm({
             );
           })}
         </ul>
-        {amount > 0 && !preview.ok && <p className="text-sm text-owe">{preview.error}</p>}
+        {(amount > 0 || itemized) && !preview.ok && <p className="text-sm text-owe">{preview.error}</p>}
       </Card>
 
-      <Card>
-        <Label htmlFor="notes">Notes (optional)</Label>
-        <Textarea id="notes" name="notes" defaultValue={defaults.notes} rows={2} maxLength={1000} />
+      <Card className="space-y-4">
+        <div>
+          <Label htmlFor="notes">Notes (optional)</Label>
+          <Textarea id="notes" name="notes" defaultValue={defaults.notes} rows={2} maxLength={1000} />
+        </div>
+        <div>
+          <Label htmlFor="receipt">Receipt photo or PDF (optional)</Label>
+          <input
+            id="receipt"
+            name="receipt"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
+            onChange={async (e) => {
+              const input = e.currentTarget;
+              const file = input.files?.[0];
+              if (!file) return setReceiptNote("");
+              const small = await shrinkImage(file);
+              if (small !== file) {
+                const dt = new DataTransfer();
+                dt.items.add(small);
+                input.files = dt.files;
+              }
+              setReceiptNote(
+                small.size > MAX_RECEIPT_BYTES
+                  ? "That file is over 4 MB. Please choose a smaller one."
+                  : `${small.name} · ${(small.size / 1024).toFixed(0)} KB${small !== file ? " (resized)" : ""}`,
+              );
+            }}
+          />
+          {receiptNote && <p className="mt-1 text-xs text-gray-500">{receiptNote}</p>}
+          {defaults.hasReceipt && (
+            <label className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" name="remove_receipt" className="h-4 w-4 accent-brand-500" />
+              Remove the current receipt
+            </label>
+          )}
+        </div>
       </Card>
 
       <FormMessage state={state} />

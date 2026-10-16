@@ -14,25 +14,41 @@ export default function EditExpensePage({ params }: PageProps<"/groups/[id]/expe
   );
 }
 
+type Details = {
+  values?: Record<string, string>;
+  items?: { name: string; price_cents: number; user_ids: string[] }[];
+  tax_cents?: number;
+  tip_cents?: number;
+};
+
 async function EditExpense({ params }: Pick<PageProps<"/groups/[id]/expenses/[expenseId]/edit">, "params">) {
   const { id, expenseId } = await params;
   const { members, user, expenses } = await loadGroup(id);
   const e = expenses.find((x) => x.id === expenseId);
   if (!e) notFound();
 
-  // Former members who are still part of this split can't be edited in; keep current members only.
+  const details = (e.split_details ?? {}) as Details;
   const shareOf = (uid: string) => e.splits.find((s) => s.user_id === uid)?.share_cents ?? 0;
-  const values: Record<string, string> = {};
+  let values: Record<string, string> = {};
   if (e.split_type === "exact") {
     for (const m of members) if (shareOf(m.id)) values[m.id] = toDecimalString(shareOf(m.id), e.currency);
   } else if (e.split_type === "percent" || e.split_type === "shares") {
-    // Original percentages/shares aren't stored; reconstruct from the saved amounts.
-    for (const m of members) {
-      if (!shareOf(m.id)) continue;
-      const pct = (shareOf(m.id) / e.amount_cents) * 100;
-      values[m.id] = e.split_type === "percent" ? String(Math.round(pct * 100) / 100) : toDecimalString(shareOf(m.id), e.currency);
-    }
+    // Prefer the exact numbers that were typed; fall back to reconstructing from amounts.
+    values = details.values ?? Object.fromEntries(
+      members
+        .filter((m) => shareOf(m.id))
+        .map((m) => [
+          m.id,
+          e.split_type === "percent"
+            ? String(Math.round((shareOf(m.id) / e.amount_cents) * 10000) / 100)
+            : toDecimalString(shareOf(m.id), e.currency),
+        ]),
+    );
   }
+  const memberIds = members.map((m) => m.id);
+  const items = details.items?.length
+    ? details.items.map((i) => ({ name: i.name, price: toDecimalString(i.price_cents, e.currency), who: i.user_ids.filter((u) => memberIds.includes(u)) }))
+    : [0, 1, 2].map(() => ({ name: "", price: "", who: memberIds }));
 
   return (
     <>
@@ -54,6 +70,11 @@ async function EditExpense({ params }: Pick<PageProps<"/groups/[id]/expenses/[ex
           splitType: e.split_type,
           included: e.splits.map((s) => s.user_id),
           values,
+          items,
+          tax: details.tax_cents ? toDecimalString(details.tax_cents, e.currency) : "",
+          tip: details.tip_cents ? toDecimalString(details.tip_cents, e.currency) : "",
+          repeat: e.repeat_interval,
+          hasReceipt: Boolean(e.receipt_path),
         }}
       />
     </>

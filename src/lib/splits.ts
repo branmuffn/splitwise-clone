@@ -3,12 +3,13 @@
 // preview (client) and the server action (authoritative).
 import { formatMoney, parseAmount } from "./money.ts";
 
-export type SplitType = "equal" | "exact" | "percent" | "shares";
+export type SplitType = "equal" | "exact" | "percent" | "shares" | "itemized";
 export const SPLIT_TYPES: { value: SplitType; label: string }[] = [
   { value: "equal", label: "Equally" },
-  { value: "exact", label: "Exact amounts" },
-  { value: "percent", label: "Percentages" },
+  { value: "exact", label: "Exact" },
+  { value: "percent", label: "Percent" },
   { value: "shares", label: "Shares" },
+  { value: "itemized", label: "Itemized" },
 ];
 
 export type Share = { user_id: string; share_cents: number };
@@ -97,4 +98,33 @@ export function computeSplit(
     .filter((s) => s.share_cents > 0);
   if (result.length === 0) return { ok: false, error: "Choose at least one person." };
   return { ok: true, shares: result };
+}
+
+// ---- Itemized bills ----
+
+export type BillItem = { name: string; price_cents: number; user_ids: string[] };
+export type ItemizedInput = { items: BillItem[]; tax_cents: number; tip_cents: number };
+export type ItemizedResult = { ok: true; shares: Share[]; total: number } | { ok: false; error: string };
+
+// Each item is split equally among the people who had it; tax and tip are then shared in
+// proportion to each person's item subtotal (how restaurants are usually split).
+export function computeItemized(input: ItemizedInput, memberIds: string[]): ItemizedResult {
+  const items = input.items.filter((i) => i.name.trim() || i.price_cents > 0);
+  if (items.length === 0) return { ok: false, error: "Add at least one item." };
+  const subtotal = new Map(memberIds.map((id) => [id, 0]));
+  for (const [n, item] of items.entries()) {
+    const label = item.name.trim() || `Item ${n + 1}`;
+    if (!(item.price_cents > 0)) return { ok: false, error: `Enter a price for “${label}”.` };
+    const who = memberIds.filter((id) => item.user_ids.includes(id));
+    if (who.length === 0) return { ok: false, error: `Choose who had “${label}”.` };
+    const parts = allocate(item.price_cents, who.map(() => 1));
+    who.forEach((id, k) => subtotal.set(id, subtotal.get(id)! + parts[k]));
+  }
+  if (input.tax_cents < 0 || input.tip_cents < 0) return { ok: false, error: "Tax and tip can't be negative." };
+  const extras = allocate(input.tax_cents + input.tip_cents, memberIds.map((id) => subtotal.get(id)!));
+  const shares = memberIds
+    .map((user_id, i) => ({ user_id, share_cents: subtotal.get(user_id)! + extras[i] }))
+    .filter((s) => s.share_cents > 0);
+  const total = shares.reduce((a, s) => a + s.share_cents, 0);
+  return { ok: true, shares, total };
 }
