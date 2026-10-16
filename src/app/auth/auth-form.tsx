@@ -42,6 +42,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                 required
               />
             </div>
+            {!isSignup && (
+              <p className="-mt-2 text-right text-sm">
+                <Link href="/forgot-password" className="text-brand-600 hover:underline">Forgot password?</Link>
+              </p>
+            )}
             <FormMessage state={state} />
             <Button type="submit" disabled={pending} className="w-full">
               {pending ? "Please wait…" : isSignup ? "Sign up" : "Sign in"}

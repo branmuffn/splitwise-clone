@@ -24,7 +24,12 @@ async function UserMenu() {
   if (!user) return null;
   return (
     <div className="flex items-center gap-3">
-      <span className="hidden text-sm opacity-90 sm:inline">{user.displayName || user.email}</span>
+      <Link href="/profile" className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-white/15" title="Your profile">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-white/25 font-semibold">
+          {(user.displayName || user.email).charAt(0).toUpperCase()}
+        </span>
+        <span className="hidden opacity-90 sm:inline">{user.displayName || user.email}</span>
+      </Link>
       <form action={signOut}>
         <Button variant="ghost" className="px-3 py-1.5 text-white hover:bg-white/15">
           Sign out
