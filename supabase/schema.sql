@@ -794,14 +794,6 @@ create policy "expense_comments_delete" on public.expense_comments
 -- and only members of that group can read, upload, or delete them.
 -- ============================================================
 
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('receipts', 'receipts', false, 5242880,
-        array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
-on conflict (id) do update set
-  public = excluded.public,
-  file_size_limit = excluded.file_size_limit,
-  allowed_mime_types = excluded.allowed_mime_types;
-
 -- First path segment as a group id, or null if it isn't a uuid.
 create or replace function public.receipt_group_id(object_name text)
 returns uuid
@@ -813,20 +805,33 @@ as $$
               then split_part(object_name, '/', 1)::uuid end;
 $$;
 
-drop policy if exists "receipts_select_member" on storage.objects;
-create policy "receipts_select_member" on storage.objects
+-- Guarded: if this project doesn't let the SQL Editor manage Storage, everything else in this
+-- file still applies, and a warning explains what was skipped.
+do $outer$
+begin
+  insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('receipts', 'receipts', false, 5242880,
+          array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
+  on conflict (id) do update set
+    public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+  execute $sql$drop policy if exists "receipts_select_member" on storage.objects;$sql$;
+  execute $sql$create policy "receipts_select_member" on storage.objects
   for select to authenticated
-  using (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));
-
-drop policy if exists "receipts_insert_member" on storage.objects;
-create policy "receipts_insert_member" on storage.objects
+  using (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));$sql$;
+  execute $sql$drop policy if exists "receipts_insert_member" on storage.objects;$sql$;
+  execute $sql$create policy "receipts_insert_member" on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));
-
-drop policy if exists "receipts_delete_member" on storage.objects;
-create policy "receipts_delete_member" on storage.objects
+  with check (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));$sql$;
+  execute $sql$drop policy if exists "receipts_delete_member" on storage.objects;$sql$;
+  execute $sql$create policy "receipts_delete_member" on storage.objects
   for delete to authenticated
-  using (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));
+  using (bucket_id = 'receipts' and public.is_group_member(public.receipt_group_id(name)));$sql$;
+exception when others then
+  raise warning 'Receipt storage setup skipped: %', sqlerrm;
+end;
+$outer$;
 
 -- ============================================================
 -- Live updates: stream changes to these tables over Supabase Realtime
@@ -847,6 +852,8 @@ begin
       end if;
     end loop;
   end if;
+exception when others then
+  raise warning 'Realtime setup skipped: %', sqlerrm;
 end;
 $$;
 
