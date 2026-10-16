@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui";
+import { computeBalances, settleUp } from "@/lib/balances";
 import { formatCents } from "@/lib/money";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { CopyCode } from "../copy-code";
@@ -53,6 +54,12 @@ async function GroupDetail({ params }: { params: PageProps<"/groups/[id]">["para
   const nameOf = (userId: string) =>
     userId === user.id ? "You" : (members.find((m) => m.id === userId)?.name ?? "Someone");
 
+  const balances = computeBalances(
+    members.map((m) => m.id),
+    expenses ?? [],
+  );
+  const transfers = settleUp(balances);
+
   return (
     <>
       <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -66,22 +73,55 @@ async function GroupDetail({ params }: { params: PageProps<"/groups/[id]">["para
         </div>
       </Card>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Members</h2>
-        <Card className="flex flex-wrap gap-2">
-          {members.map((m) => (
-            <span
-              key={m.id}
-              className="inline-flex items-center gap-2 rounded-full bg-gray-100 py-1 pl-1 pr-3 text-sm"
-            >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500 text-xs font-semibold text-white">
-                {m.name.charAt(0).toUpperCase()}
-              </span>
-              {m.name}
-            </span>
-          ))}
-        </Card>
-      </section>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Balances</h2>
+          <Card className="divide-y divide-gray-100 p-0">
+            {members.map((m) => {
+              const cents = balances.get(m.id) ?? 0;
+              return (
+                <div key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-500 text-sm font-semibold text-white">
+                      {m.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="truncate">
+                      {m.name}
+                      {m.id === user.id && <span className="text-gray-400"> (you)</span>}
+                    </span>
+                  </span>
+                  <span className={`shrink-0 text-right text-sm ${cents > 0 ? "text-brand-600" : cents < 0 ? "text-owe" : "text-gray-400"}`}>
+                    {cents > 0 ? "gets back" : cents < 0 ? "owes" : "settled up"}
+                    {cents !== 0 && <span className="block text-base font-semibold">{formatCents(Math.abs(cents))}</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </Card>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Settle up</h2>
+          <Card className="p-0">
+            {transfers.length > 0 ? (
+              <ul className="divide-y divide-gray-100">
+                {transfers.map((t) => (
+                  <li key={`${t.from}-${t.to}`} className="px-5 py-3">
+                    <span className={t.from === user.id ? "font-semibold text-owe" : "font-medium"}>{nameOf(t.from)}</span>
+                    {t.from === user.id ? " owe " : " owes "}
+                    <span className={t.to === user.id ? "font-semibold text-brand-600" : "font-medium"}>
+                      {t.to === user.id ? "you" : nameOf(t.to)}
+                    </span>{" "}
+                    <span className="font-semibold">{formatCents(t.cents)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-5 py-6 text-center text-gray-500">Everyone is settled up 🎉</p>
+            )}
+          </Card>
+        </section>
+      </div>
 
       <ExpenseForm groupId={group.id} members={members} currentUserId={user.id} />
 
