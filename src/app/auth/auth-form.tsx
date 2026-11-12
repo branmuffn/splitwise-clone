@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signIn, signUp } from "./actions";
+import { DemoButton } from "./demo-button";
 import { Button, Card, FormMessage, Input, Label, Logo } from "@/components/ui";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
@@ -53,6 +54,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             </Button>
           </form>
         </Card>
+        <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+          <span className="h-px flex-1 bg-gray-200" />
+          or
+          <span className="h-px flex-1 bg-gray-200" />
+        </div>
+        <DemoButton />
         <p className="mt-4 text-center text-sm text-gray-600">
           {isSignup ? "Already have an account? " : "New here? "}
           <Link href={isSignup ? "/login" : "/signup"} className="font-semibold text-brand-600 hover:underline">

@@ -45,6 +45,25 @@ npm run test:e2e       # end-to-end against SITE (default http://localhost:3123)
 
 Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod --yes`.
 
+## One-click demo (Demo Day request from Justin)
+
+- "✨ Try the demo (no sign-up)" on `/login` and `/signup` (`src/app/auth/demo-button.tsx`) calls
+  `startDemo` (`src/app/auth/actions.ts`), which runs `createDemoAccount` in `src/lib/demo.ts`.
+- Each click signs up a **fresh** reviewer account (`demo-<id>@example.com`, display name "Alex (demo)",
+  random password nobody knows) on the cookie-backed client, so the reviewer ends up signed in. It
+  also signs up two sample friends, Sam and Riley (`demo-friend-<id>@example.com`), on throwaway
+  clients, then seeds the data. **Beach trip 🏖️** has equal, itemized (with tax), shares, a percent
+  split in EUR, and exact expenses, plus Riley's $100 payment and a comment. **Apartment 🏠** has
+  monthly recurring Rent and Internet. It lands on the trip group in about 3 s.
+- Why per-click accounts and not one shared login: a shared account could have its data deleted or
+  password changed by one reviewer, breaking it for everyone. No service key and no schema change
+  needed. It does need Supabase **Confirm email OFF** (sign-up must return a session).
+- `isDemoEmail()` drives the amber banner in `AppHeader`. Its "Create a real account" button signs
+  out to `/signup`. Signing out ends a demo: the random password is never shown.
+- If you change the sample data, update the exact balances asserted in `tests/e2e/demo.mjs`
+  (reviewer owed $398.96 and €57.60).
+- Cleanup (also in README and RESUME.md): `delete from auth.users where email like 'demo-%@example.com' and created_at < now() - interval '1 day';`
+
 ## Architecture
 
 - `src/lib/`: pure, unit-tested logic: `money.ts` (minor units per currency via Intl),
@@ -87,7 +106,8 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
 
 They submit the real HTML forms (as a browser with JS off would) as several fake users against a
 running site and the **real** Supabase project: `core.mjs` (earlier features, ~59 checks) and
-`extras.mjs` (v3 features incl. receipts and Realtime, ~48 checks).
+`extras.mjs` (v3 features incl. receipts and Realtime, ~48 checks), and `demo.mjs` (one-click
+demo, 15 checks).
 `SITE=https://splitwise-clone-three-theta.vercel.app npm run test:e2e` runs them against
 production. They create users named `claude-e2e-*@example.com`; clean up with this in the SQL
 Editor (cascades to their groups and data):
@@ -103,7 +123,8 @@ segments), and every page contains Next's hidden "could not be found" template, 
 ## Current status (as of 2026-10-16)
 
 - **Everything below is built, deployed, and passing** on the live site: core e2e (59 checks),
-  extras e2e (48 checks), 23 unit-test groups, and the SQL permission tests.
+  extras e2e (48 checks), demo e2e (15 checks), 23 unit-test groups, and the SQL permission tests.
+  - Demo Day follow-up: one-click demo login (see "One-click demo" above).
   - v1: auth, groups with join codes, equal-split expenses, balances.
   - v2: custom splits, multi-currency, categories, edit/delete, payments, activity, group
     settings, dashboard totals, profile, password reset.
@@ -115,7 +136,8 @@ segments), and every page contains Next's hidden "could not be found" template, 
   interactions, phone camera receipt upload and in-browser resizing, the live-update dot and
   auto-refresh across two browsers, the Remind button opening a mail app, CSV opening in Excel or
   Google Sheets, and chart hover. If the user reports problems, start there.
-- Test accounts (`claude-e2e-*@example.com`) may still exist in Supabase; the cleanup SQL is above.
+- Test accounts (`claude-e2e-*@example.com`) and demo accounts (`demo-*@example.com`) accumulate in
+  Supabase; both cleanup statements are above.
 - `RESUME.md` is the user's plain-language guide to stopping and restarting; keep it current if
   URLs, services, or workflow change.
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/auth/actions";
+import { isDemoEmail } from "@/lib/demo";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { Button, Logo } from "./ui";
 
@@ -15,7 +16,28 @@ export function AppHeader() {
           <UserMenu />
         </Suspense>
       </div>
+      <Suspense fallback={null}>
+        <DemoBanner />
+      </Suspense>
     </header>
+  );
+}
+
+// Shown to one-click demo accounts so reviewers know the data is a private sample.
+async function DemoBanner() {
+  const user = await getCurrentUser();
+  if (!user || !isDemoEmail(user.email)) return null;
+  return (
+    <div className="bg-amber-50 text-amber-900">
+      <div className="mx-auto max-w-3xl px-4 py-2 text-xs sm:text-sm">
+        👋 <b>You&apos;re in a demo account.</b> Sam and Riley are sample friends, and everything here is a private sandbox:
+        add, edit, or delete anything. Signing out ends the demo.{" "}
+        <form action={signOut} className="inline">
+          <input type="hidden" name="next" value="/signup" />
+          <button type="submit" className="font-semibold underline">Create a real account</button>
+        </form>
+      </div>
+    </div>
   );
 }
 

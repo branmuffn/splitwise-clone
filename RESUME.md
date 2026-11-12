@@ -17,6 +17,26 @@ How they connect: **code in this folder → pushed to GitHub → Vercel builds a
 
 ---
 
+## The demo login (for reviewers)
+
+Anyone can click **"✨ Try the demo (no sign-up)"** on the sign-in page. In about 3 seconds they're signed
+in to their own private sample account, with a beach-trip group and an apartment group already full
+of expenses. Every click gets a fresh copy, so reviewers can edit or delete anything without affecting
+anyone else. A yellow banner tells them it's a demo, with a button to create a real account.
+
+**Share this link with reviewers:** https://splitwise-clone-three-theta.vercel.app/login
+
+**Keep it working:** Supabase **Confirm email** must stay OFF (Authentication → Sign In / Providers →
+Email). If it's on, the demo button shows "couldn't be set up".
+
+**Clean up old demo accounts** every so often (each click adds 3 accounts). Run this in the SQL
+Editor; it only removes demo accounts more than a day old, along with their sample data:
+```sql
+delete from auth.users where email like 'demo-%@example.com' and created_at < now() - interval '1 day';
+```
+
+---
+
 ## Stopping
 
 1. Type `/exit` in Claude Code (or press `Ctrl+C` twice).
@@ -53,6 +73,8 @@ How they connect: **code in this folder → pushed to GitHub → Vercel builds a
 | Fix something broken on the site | "On the live site, [what you did] and [what went wrong]. Please fix it." |
 | Check everything still works | "Run the end-to-end tests against the live site." |
 | Clean up test accounts | "Give me the cleanup SQL" (or use the snippet below) |
+| Clean up demo accounts | Use the SQL in "The demo login" section above |
+| Change the demo's sample data | "Update the demo sample data in src/lib/demo.ts to [what you want]" |
 | See what's planned | "What's in the 'What's next' list in CLAUDE.md?" |
 
 **When Claude says "run this SQL":** it puts the SQL on your clipboard. Then:

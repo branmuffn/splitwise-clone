@@ -9,6 +9,9 @@ Pushing to `main` on GitHub deploys to production automatically.
 
 ## Features
 
+- **One-click demo** (for reviewers): "✨ Try the demo" on the sign-in and sign-up pages creates a
+  private sample account with two groups, two sample friends, and expenses showing every feature, then
+  signs you in. Each click is a fresh sandbox, so reviewers can't affect each other.
 - **Accounts**: email + password sign up / sign in / sign out, forgot-password email, change password,
   editable display name and default currency.
 - **Groups**: create (auto 6-character join code) or join by code; rename, set a default currency,
@@ -53,6 +56,16 @@ sending from the server would need an email provider API key).
 5. `npm install && npm run dev`
 
 `npm test` runs the money, split, and balance unit tests (Node's built-in test runner).
+
+### Demo accounts
+
+Each demo click creates three users (`demo-…@example.com` and two `demo-friend-…@example.com`). This needs
+**Confirm email** turned off in Supabase (otherwise the demo shows "couldn't be set up"). To clear out
+demo accounts older than a day (their groups and expenses go with them), run in the SQL Editor:
+
+```sql
+delete from auth.users where email like 'demo-%@example.com' and created_at < now() - interval '1 day';
+```
 
 ## How it works
 

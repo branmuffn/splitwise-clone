@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createDemoAccount } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; message?: string } | undefined;
@@ -45,10 +46,10 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
   redirect("/");
 }
 
-export async function signOut() {
+export async function signOut(formData?: FormData) {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect(formData?.get("next") === "/signup" ? "/signup" : "/login");
 }
 
 export async function requestPasswordReset(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -64,4 +65,20 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
   // Don't reveal whether the email has an account; only surface rate limits.
   if (error && error.status === 429) return { error: "Too many emails sent. Please try again later." };
   return { message: "If that email has an account, a reset link is on its way." };
+}
+
+// One click: create a private demo sandbox, sign in as it, and open the sample group.
+export async function startDemo(): Promise<FormState> {
+  const supabase = await createClient();
+  let tripId: string;
+  try {
+    ({ tripId } = await createDemoAccount(supabase));
+  } catch (e) {
+    console.error("Demo setup failed:", e);
+    // If the demo user was created but seeding failed part-way, they're still signed in.
+    const { data } = await supabase.auth.getClaims();
+    if (data?.claims?.sub) redirect("/");
+    return { error: "The demo couldn't be set up right now. Please try again in a minute." };
+  }
+  redirect(`/groups/${tripId}?demo=1`);
 }
