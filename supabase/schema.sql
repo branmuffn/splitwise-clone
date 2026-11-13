@@ -433,6 +433,7 @@ begin
        case when coalesce(p_repeat_interval, 'none') <> 'none' then coalesce(p_expense_date, current_date) end, 0)
     returning id into eid;
   else
+    -- repeat_count is reset by the reset_repeat_count trigger when the schedule or date changes.
     update public.expenses set
       description  = trim(p_description),
       amount_cents = p_amount_cents,
@@ -449,9 +450,6 @@ begin
         when repeat_interval is distinct from p_repeat_interval or expense_date is distinct from p_expense_date
           then coalesce(p_expense_date, current_date)
         else repeat_anchor end,
-      repeat_count = case
-        when repeat_interval is distinct from p_repeat_interval or expense_date is distinct from p_expense_date
-          then 0 else repeat_count end,
       repeat_interval = coalesce(p_repeat_interval, 'none'),
       updated_at   = now()
     where id = eid and group_id = p_group_id;
@@ -468,6 +466,29 @@ begin
   return eid;
 end;
 $$;
+
+-- Restart the recurring counter when the schedule or date changes. This lives in a trigger, not in
+-- save_expense, so signed-in users never need UPDATE on repeat_count (see the column grants below).
+-- BEFORE triggers can change NEW without the caller holding UPDATE on those columns.
+create or replace function public.reset_repeat_count()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.repeat_interval is distinct from old.repeat_interval
+     or new.expense_date is distinct from old.expense_date then
+    new.repeat_count := 0;
+    new.repeat_anchor := case when new.repeat_interval = 'none' then null else new.expense_date end;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists reset_repeat_count on public.expenses;
+create trigger reset_repeat_count
+  before update of repeat_interval, expense_date on public.expenses
+  for each row execute function public.reset_repeat_count();
 
 -- Create any recurring copies that have come due (up to today) for a group.
 -- Called whenever a member opens the group or dashboard, so no cron job or secret key is needed.
@@ -638,6 +659,7 @@ revoke execute on function public.remove_member(uuid, uuid)            from publ
 revoke execute on function public.save_expense(uuid, uuid, text, integer, text, uuid, text, text, date, text, jsonb, jsonb, text) from public, anon;
 revoke execute on function public.materialize_recurring(uuid)          from public, anon;
 revoke execute on function public.log_activity()                       from public, anon, authenticated;
+revoke execute on function public.reset_repeat_count()                 from public, anon, authenticated;
 grant  execute on function public.is_group_member(uuid)                to authenticated;
 grant  execute on function public.is_user_in_group(uuid, uuid)         to authenticated;
 grant  execute on function public.shares_group_with(uuid)              to authenticated;
@@ -788,6 +810,32 @@ drop policy if exists "expense_comments_delete" on public.expense_comments;
 create policy "expense_comments_delete" on public.expense_comments
   for delete to authenticated
   using (user_id = auth.uid() and public.is_group_member(group_id));
+
+-- ============================================================
+-- Column-level UPDATE grants
+-- Supabase gives signed-in users UPDATE on every column by default, and the update policies above
+-- only check membership. Without these grants any member could set groups.created_by to
+-- themselves and then delete the group, or set join_code to anything.
+-- SECURITY DEFINER functions (regenerate_join_code, materialize_recurring, ...) are not affected.
+-- save_expense is SECURITY INVOKER, so every column it writes on edit is granted here.
+-- A new column is NOT editable by signed-in users until you add it to a grant below.
+-- Not granted on purpose:
+--   groups:   id, join_code (only via regenerate_join_code), created_by, created_at
+--   expenses: id, group_id, created_by, created_at, repeat_count, recurring_source_id
+--   profiles: id, email, created_at
+-- Also in supabase/migrations/20261112100000_column_update_grants.sql.
+-- ============================================================
+
+revoke update on public.groups from public, anon, authenticated;
+grant update (name, default_currency, simplify_debts) on public.groups to authenticated;
+
+revoke update on public.expenses from public, anon, authenticated;
+grant update (description, amount_cents, currency, paid_by, category, notes, expense_date,
+              split_type, split_details, repeat_interval, repeat_anchor, updated_at, receipt_path)
+  on public.expenses to authenticated;
+
+revoke update on public.profiles from public, anon, authenticated;
+grant update (display_name, default_currency) on public.profiles to authenticated;
 
 -- ============================================================
 -- Receipt photos: private Storage bucket. Files live at <group_id>/<expense_id>/<file>,
