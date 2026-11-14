@@ -30,8 +30,11 @@ async function DemoBanner() {
   return (
     <div className="bg-amber-50 text-amber-900">
       <div className="mx-auto max-w-3xl px-4 py-2 text-xs sm:text-sm">
-        👋 <b>You&apos;re in a demo account.</b> Sam and Riley are sample friends, and everything here is a private sandbox:
-        add, edit, or delete anything. Signing out ends the demo.{" "}
+        <span className="sm:hidden">👋 <b>Demo account</b> · sample data only.</span>
+        <span className="max-sm:hidden">
+          👋 <b>You&apos;re in a demo account.</b> Sam and Riley are sample friends, and everything here is a private sandbox:
+          add, edit, or delete anything. Signing out ends the demo.
+        </span>{" "}
         <form action={signOut} className="inline">
           <input type="hidden" name="next" value="/signup" />
           <button type="submit" className="font-semibold underline">Create a real account</button>

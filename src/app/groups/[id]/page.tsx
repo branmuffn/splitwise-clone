@@ -86,7 +86,7 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
   return (
     <>
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-sm font-medium text-brand-600 hover:underline">‹ All groups</Link>
+        <Link href="/" className="text-sm font-medium text-brand-600 hover:underline max-sm:-my-2.5 max-sm:py-2.5 max-sm:text-base">‹ All groups</Link>
         <LiveRefresh groupId={id} />
       </div>
       {notice && <FormMessage state={{ message: notice }} />}
@@ -106,12 +106,16 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
             <CopyCode code={group.join_code} />
           </div>
         </div>
+        {/* Phones (Brian picked S2, 2026-11-14): Add expense moves to the round + button, Settle up goes full width, and
+            Charts / Activity / Settings become one row of tabs. Tablets and laptops: unchanged. */}
         <div className="flex flex-wrap gap-2">
-          <ButtonLink href={`/groups/${id}/expenses/new`}>+ Add expense</ButtonLink>
-          <ButtonLink href={`/groups/${id}/settle`} variant="owe">Settle up</ButtonLink>
-          <ButtonLink href={`/groups/${id}/stats`} variant="secondary">Charts</ButtonLink>
-          <ButtonLink href={`/groups/${id}/activity`} variant="secondary">Activity</ButtonLink>
-          <ButtonLink href={`/groups/${id}/settings`} variant="secondary">Settings</ButtonLink>
+          <ButtonLink href={`/groups/${id}/expenses/new`} className="max-sm:hidden">+ Add expense</ButtonLink>
+          <ButtonLink href={`/groups/${id}/settle`} variant="owe" className="max-sm:w-full max-sm:py-3">Settle up</ButtonLink>
+          <div className="flex flex-wrap gap-2 max-sm:w-full max-sm:flex-nowrap max-sm:gap-0 max-sm:border-b max-sm:border-gray-200 max-sm:*:flex-1 max-sm:*:rounded-none max-sm:*:border-0 max-sm:*:bg-transparent max-sm:*:py-3 max-sm:*:shadow-none">
+            <ButtonLink href={`/groups/${id}/stats`} variant="secondary">Charts</ButtonLink>
+            <ButtonLink href={`/groups/${id}/activity`} variant="secondary">Activity</ButtonLink>
+            <ButtonLink href={`/groups/${id}/settings`} variant="secondary">Settings</ButtonLink>
+          </div>
         </div>
       </Card>
 
@@ -136,6 +140,17 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
       </div>
 
       <Ledger data={data} filters={filters} keepView={wantConverted} filterQuery={filterQuery} />
+
+      {/* Phones: a round + button for a new expense, always within thumb reach (Brian picked S2, a bit bigger than the
+          mockup), plus room at the bottom so it never covers the last row. Tablets and laptops use the header button. */}
+      <Link
+        href={`/groups/${id}/expenses/new`}
+        aria-label="Add expense"
+        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-40 grid h-[68px] w-[68px] place-items-center rounded-full bg-brand-500 text-4xl font-light leading-none text-white shadow-lg shadow-black/25 transition active:scale-95 sm:hidden"
+      >
+        +
+      </Link>
+      <div aria-hidden className="h-16 sm:hidden" />
     </>
   );
 }
@@ -223,11 +238,11 @@ function Suggested({ data, view, origin }: { data: GroupData; view: BalanceView;
                   </span>
                   <span className="flex shrink-0 gap-1">
                     {remind && (
-                      <a href={remind} className="rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100" title={`Email ${youOr(t.from)} a reminder`}>
+                      <a href={remind} className="rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm" title={`Email ${youOr(t.from)} a reminder`}>
                         Remind
                       </a>
                     )}
-                    <Link href={settleUrl} className="rounded-md px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50">
+                    <Link href={settleUrl} className="rounded-md px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm">
                       Record
                     </Link>
                   </span>
@@ -370,7 +385,7 @@ function Ledger({ data, filters, keepView, filterQuery }: { data: GroupData; fil
                       action={deletePayment.bind(null, group.id, r.p.id)}
                       confirmText="Delete this payment? Balances will change back."
                       variant="ghost"
-                      className="px-2 py-1 text-xs"
+                      className="px-2 py-1 text-xs max-sm:min-h-10 max-sm:px-3 max-sm:text-sm"
                       pendingText="…"
                     >
                       Delete

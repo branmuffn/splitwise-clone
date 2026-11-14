@@ -100,7 +100,7 @@ export function Avatar({ name, id, size = "md" }: { name: string; id: string; si
 
 export function BackLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="inline-block text-sm font-medium text-brand-600 hover:underline">
+    <Link href={href} className="inline-block text-sm font-medium text-brand-600 hover:underline max-sm:-my-2.5 max-sm:py-2.5 max-sm:text-base">
       ‹ {children}
     </Link>
   );

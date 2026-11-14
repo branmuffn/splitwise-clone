@@ -76,7 +76,7 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
                     action={removeMember.bind(null, id, m.id)}
                     confirmText={`Remove ${m.name} from the group?`}
                     variant="ghost"
-                    className="px-2 py-1 text-xs"
+                    className="px-2 py-1 text-xs max-sm:min-h-10 max-sm:px-3 max-sm:text-sm"
                     pendingText="Removing…"
                   >
                     Remove

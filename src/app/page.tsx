@@ -101,7 +101,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
             {groups.map((g) => {
               const lines = perGroup.get(g.id) ?? [];
               return (
-                <Link key={g.id} href={`/groups/${g.id}`} className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-gray-50">
+                <Link key={g.id} href={`/groups/${g.id}`} className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-gray-50 max-sm:flex-wrap max-sm:gap-y-1">
                   <span className="flex min-w-0 items-center gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 font-semibold text-brand-700">
                       {g.name.charAt(0).toUpperCase()}
@@ -111,7 +111,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
                       <span className="text-xs text-gray-500">{g.group_members[0]?.count ?? 0} members</span>
                     </span>
                   </span>
-                  <span className="shrink-0 text-right text-sm">
+                  <span className="shrink-0 text-right text-sm max-sm:w-full max-sm:pl-13 max-sm:text-left">
                     {lines.length === 0 ? (
                       <span className="text-gray-400">settled up</span>
                     ) : (
