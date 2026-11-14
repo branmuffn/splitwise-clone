@@ -29,10 +29,10 @@ anyone else. A yellow banner tells them it's a demo, with a button to create a r
 **Keep it working:** Supabase **Confirm email** must stay OFF (Authentication → Sign In / Providers →
 Email). If it's on, the demo button shows "couldn't be set up".
 
-**Clean up old demo accounts** every so often (each click adds 3 accounts). Run this in the SQL
-Editor; it only removes demo accounts more than a day old, along with their sample data:
+**Old demo accounts clean themselves up:** every day, demo accounts more than 30 days old are deleted
+with their sample data. To run it right now, paste this in the SQL Editor:
 ```sql
-delete from auth.users where email like 'demo-%@example.com' and created_at < now() - interval '1 day';
+select public.cleanup_old_demo_accounts();
 ```
 
 ---

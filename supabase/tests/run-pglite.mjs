@@ -27,7 +27,10 @@ const files = process.argv.length > 2
   ? process.argv.slice(2).map((f) => path.resolve(f))
   : [
       here("supabase/schema.sql"),
-      ...readdirSync(here("supabase/migrations")).filter((f) => f.endsWith(".sql")).sort()
+      ...readdirSync(here("supabase/migrations"))
+        // pg_cron (the demo cleanup schedule) only exists on Supabase, not in PGlite.
+        .filter((f) => f.endsWith(".sql") && !readFileSync(here("supabase/migrations", f), "utf8").includes("pg_cron"))
+        .sort()
         .map((f) => here("supabase/migrations", f)),
     ];
 

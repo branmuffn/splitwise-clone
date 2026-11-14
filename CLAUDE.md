@@ -62,7 +62,8 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
   out to `/signup`. Signing out ends a demo: the random password is never shown.
 - If you change the sample data, update the exact balances asserted in `tests/e2e/demo.mjs`
   (reviewer owed $398.96 and €57.60).
-- Cleanup (also in README and RESUME.md): `delete from auth.users where email like 'demo-%@example.com' and created_at < now() - interval '1 day';`
+- Cleanup is automatic: `supabase/migrations/20261114120000_demo_cleanup.sql` schedules a daily pg_cron job that deletes
+  demo accounts older than 30 days (Brian's choice, 2026-11-14). By hand: `select public.cleanup_old_demo_accounts();`
 
 ## Architecture
 

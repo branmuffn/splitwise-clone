@@ -60,11 +60,12 @@ sending from the server would need an email provider API key).
 ### Demo accounts
 
 Each demo click creates three users (`demo-…@example.com` and two `demo-friend-…@example.com`). This needs
-**Confirm email** turned off in Supabase (otherwise the demo shows "couldn't be set up"). To clear out
-demo accounts older than a day (their groups and expenses go with them), run in the SQL Editor:
+**Confirm email** turned off in Supabase (otherwise the demo shows "couldn't be set up"). Demo accounts older
+than 30 days are deleted automatically every day, along with their groups and expenses
+(`supabase/migrations/20261114120000_demo_cleanup.sql`, a pg_cron job). To run it now, in the SQL Editor:
 
 ```sql
-delete from auth.users where email like 'demo-%@example.com' and created_at < now() - interval '1 day';
+select public.cleanup_old_demo_accounts();
 ```
 
 ## How it works
