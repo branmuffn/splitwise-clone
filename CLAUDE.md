@@ -12,7 +12,7 @@ feature list.
 | Piece | Where | Notes |
 |---|---|---|
 | Code | this folder; GitHub `branmuffn/splitwise-clone` (`main`) | Push to `main` and Vercel deploys production automatically |
-| Live site | https://splitwise-clone-three-theta.vercel.app | Vercel project `branmuffn/splitwise-clone` |
+| Live site | https://split-tea.vercel.app | Vercel project `branmuffn/splitwise-clone` |
 | Database / auth / storage / realtime | Supabase project `tvtlsgeenqftstbqhotv` | Schema is `supabase/schema.sql` |
 | Env vars | `.env.local` (git-ignored) and Vercel Production | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
 
@@ -109,7 +109,7 @@ They submit the real HTML forms (as a browser with JS off would) as several fake
 running site and the **real** Supabase project: `core.mjs` (earlier features, ~59 checks) and
 `extras.mjs` (v3 features incl. receipts and Realtime, ~48 checks), and `demo.mjs` (one-click
 demo, 15 checks).
-`SITE=https://splitwise-clone-three-theta.vercel.app npm run test:e2e` runs them against
+`SITE=https://split-tea.vercel.app npm run test:e2e` runs them against
 production. They create users named `claude-e2e-*@example.com`; clean up with this in the SQL
 Editor (cascades to their groups and data):
 

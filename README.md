@@ -1,6 +1,6 @@
 # Splitwise clone
 
-Frontier Commons build bootcamp, Week 3. Live: https://splitwise-clone-three-theta.vercel.app
+Frontier Commons build bootcamp, Week 3. Live: https://split-tea.vercel.app
 
 **Coming back to this project?** See [RESUME.md](RESUME.md) for how to restart, where everything lives, and what to say to Claude.
 

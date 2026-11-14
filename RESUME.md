@@ -10,7 +10,7 @@ A plain-language guide to stopping, restarting, and finding everything for the S
 |---|---|---|---|
 | **This folder** | All the code, plus your Supabase keys in `.env.local` | `~/fc/splitwise-clone` on this Mac | Every time. Always start Claude here. |
 | **GitHub** | A backup of the code. Pushing to it publishes the site | https://github.com/branmuffn/splitwise-clone | Rarely. Claude pushes for you. |
-| **Vercel** | Hosts the live website | https://splitwise-clone-three-theta.vercel.app (dashboard: https://vercel.com, project `splitwise-clone`) | Only if a deploy fails or you change settings. |
+| **Vercel** | Hosts the live website | https://split-tea.vercel.app (dashboard: https://vercel.com, project `splitwise-clone`) | Only if a deploy fails or you change settings. |
 | **Supabase** | Database, logins, receipt photos, live updates | https://supabase.com/dashboard, project `tvtlsgeenqftstbqhotv` | When Claude asks you to run SQL or change a setting. |
 
 How they connect: **code in this folder → pushed to GitHub → Vercel builds and publishes it automatically → the site talks to Supabase.**
@@ -24,7 +24,7 @@ in to their own private sample account, with a beach-trip group and an apartment
 of expenses. Every click gets a fresh copy, so reviewers can edit or delete anything without affecting
 anyone else. A yellow banner tells them it's a demo, with a button to create a real account.
 
-**Share this link with reviewers:** https://splitwise-clone-three-theta.vercel.app/login
+**Share this link with reviewers:** https://split-tea.vercel.app
 
 **Keep it working:** Supabase **Confirm email** must stay OFF (Authentication → Sign In / Providers →
 Email). If it's on, the demo button shows "couldn't be set up".
@@ -98,7 +98,7 @@ delete from auth.users where email like 'claude-e2e-%@example.com';
 | Claude can't push to GitHub | Make sure you're signed in to GitHub on this Mac, then ask Claude to retry. |
 | The site shows errors after a change | Tell Claude what you saw. Vercel keeps old versions, and Claude can roll back. |
 | Sign-up says "email rate limit exceeded" | In Supabase → Authentication → Sign In / Providers → Email, make sure **Confirm email** is OFF. |
-| Forgot-password emails link to `localhost` | Supabase → Authentication → URL Configuration: set **Site URL** to the live site and add `https://splitwise-clone-three-theta.vercel.app/**` to Redirect URLs. |
+| Forgot-password emails link to `localhost` | Supabase → Authentication → URL Configuration: set **Site URL** to the live site and add `https://split-tea.vercel.app/**` to Redirect URLs. |
 
 ---
 
