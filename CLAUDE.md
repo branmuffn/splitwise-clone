@@ -66,6 +66,26 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
 - Cleanup is automatic: `supabase/migrations/20261114120000_demo_cleanup.sql` schedules a daily pg_cron job that deletes
   demo accounts older than 30 days (Brian's choice, 2026-11-14). By hand: `select public.cleanup_old_demo_accounts();`
 
+## Start now, invite links, stand-ins (Brian, 2026-11-15)
+
+- **Start now** (`/start`): a name-only account = Supabase anonymous sign-in (needs Authentication > "Allow anonymous
+  sign-ins" ON; it is). Profile email is `''`; `getCurrentUser().nameOnly`. Home shows a reminder to add an email; the
+  header's Sign out goes to a warning on `/profile?signout=1`. Profile > "Add an email" = `updateUser({ email, password })`
+  (same user id, groups kept); trigger `on_auth_user_email_changed` copies the email to `profiles`.
+- **Invite links** `/join/<code>` (public): `group_invite_preview(code)` shows name + member count; a name is enough to
+  join (anonymous sign-in, then `join_group`), or sign in with email. Group page and settings: "Copy invite link".
+- **Stand-ins**: Settings > Members > "Add someone who isn't here yet". `addStandIn` signs in a fresh anonymous account on
+  a throwaway client, then `add_standin(gid, sid)` marks it (`profiles.standin_group`) and adds it to the group. The invite
+  page asks "Which one are you?" (`group_standins(code)`); picking one, or "That's me" in Settings, runs
+  `claim_standin(sid)`: moves shares (summed if both on an expense), expenses, payments (drops payments between the two),
+  comments, activity, `split_details` ids, then deletes the stand-in. `log_activity` is muted during the move
+  (`splitwise.quiet`) and one `standin_claimed` entry is written.
+- SQL: `supabase/migrations/20261115120000_name_only_accounts.sql` and `20261115130000_standins.sql` (both run in
+  production 2026-11-15, mirrored in schema.sql). The nightly cleanup also removes test accounts after 1 day
+  (`claude-e2e-*@example.com`, name-only "E2E *") and stand-ins left in no group.
+- Supabase rate-limits anonymous sign-ins (all come from Vercel's servers): keep the limit raised (Auth > Rate Limits).
+- Tests: `tests/e2e/nameonly.mjs` (26 checks), `tests/e2e/standins.mjs` (25 checks); both in `npm run test:e2e`.
+
 ## Architecture
 
 - `src/lib/`: pure, unit-tested logic: `money.ts` (minor units per currency via Intl),
