@@ -17,6 +17,7 @@ export default async function JoinPage({ params }: PageProps<"/join/[code]">) {
   const known = Boolean(preview && !preview.error);
   const broken = !valid || (known && !group);
   // Members can read their own groups, so this finds the group only if you're already in it.
+  const standins = valid && known ? ((await supabase.rpc("group_standins", { code })).data ?? []) : [];
   const mine = valid && user ? (await supabase.from("groups").select("id, name").eq("join_code", code).maybeSingle()).data : null;
 
   return (
@@ -35,6 +36,9 @@ export default async function JoinPage({ params }: PageProps<"/join/[code]">) {
           ) : mine ? (
             <>
               <h1 className="text-xl font-semibold">You&apos;re already in {mine.name}</h1>
+              {standins.length > 0 && (
+                <p className="mt-2 text-sm text-gray-600">Are you one of the people added by name? In the group&apos;s Settings, tap &quot;That&apos;s me&quot; next to your name.</p>
+              )}
               <ButtonLink href={`/groups/${mine.id}`} className="mt-5 w-full py-3 text-base">Open the group</ButtonLink>
             </>
           ) : (
@@ -49,7 +53,7 @@ export default async function JoinPage({ params }: PageProps<"/join/[code]">) {
                   {group && <p className="text-sm text-gray-500">{group.members} {group.members === 1 ? "member" : "members"}</p>}
                 </div>
               </div>
-              <JoinForm action={joinByInvite.bind(null, code)} signedInAs={user?.displayName ?? null} />
+              <JoinForm action={joinByInvite.bind(null, code)} signedInAs={user?.displayName ?? null} standins={standins} />
             </>
           )}
         </Card>

@@ -8,7 +8,8 @@ import {
 import { allocate } from "@/lib/splits";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
-export type Member = { id: string; name: string; email: string };
+// standin: added by name before they joined (Brian, 2026-11-15); they take over their spot from the invite link.
+export type Member = { id: string; name: string; email: string; standin: boolean; addedBy: string | null };
 
 // Everything a group page needs, loaded under the current user's RLS.
 // 404s if the group doesn't exist or the user isn't a member.
@@ -31,7 +32,7 @@ export async function tryLoadGroup(groupId: string) {
     supabase.from("groups").select("*").eq("id", groupId).maybeSingle(),
     supabase
       .from("group_members")
-      .select("user_id, joined_at, profiles(display_name, email)")
+      .select("user_id, joined_at, profiles(display_name, email, standin_group, standin_added_by)")
       .eq("group_id", groupId)
       .order("joined_at")
       .order("user_id"),
@@ -54,6 +55,8 @@ export async function tryLoadGroup(groupId: string) {
     id: m.user_id,
     name: m.profiles?.display_name ?? "Unknown",
     email: m.profiles?.email ?? "",
+    standin: Boolean(m.profiles?.standin_group),
+    addedBy: m.profiles?.standin_added_by ?? null,
   }));
   const memberIds = members.map((m) => m.id);
 

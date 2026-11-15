@@ -27,6 +27,7 @@ const notices: Record<string, string> = {
   "deleted=payment": "Payment deleted.",
   "paid=1": "Payment recorded.",
   "joined=1": "You joined the group. Welcome!",
+  "claimed=1": "You're in! Everything logged for you is now yours.",
 };
 
 // Balances and suggested payments, either per currency or converted into one.
@@ -108,6 +109,7 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
               <InviteLink url={`${origin}/join/${group.join_code}`} groupName={group.name} />
               <CopyCode code={group.join_code} />
             </div>
+            <Link href={`/groups/${id}/settings#add-person`} className="mt-1.5 inline-block text-sm font-medium text-brand-600 hover:underline">+ Add people by name</Link>
           </div>
         </div>
         {/* Phones (Brian picked S2, 2026-11-14): Add expense moves to the round + button, Settle up goes full width, and
@@ -190,6 +192,7 @@ function Balances({ data, view }: { data: GroupData; view: BalanceView }) {
                 <span className="truncate">
                   {m.name}
                   {m.id === user.id && <span className="text-gray-400"> (you)</span>}
+                  {m.standin && <span className="ml-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
                 </span>
               </span>
               <span className="shrink-0 text-right text-sm">

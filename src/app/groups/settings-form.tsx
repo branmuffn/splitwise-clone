@@ -44,3 +44,22 @@ export function GroupSettingsForm({
     </form>
   );
 }
+
+// "Add someone who isn't here yet" (stand-ins, 2026-11-15). addStandIn is bound to the group in the Server Component.
+export function AddStandInForm({ action: addAction }: { action: (prev: FormState, formData: FormData) => Promise<FormState> }) {
+  const [state, action, pending] = useActionState(addAction, undefined);
+  return (
+    <form action={action} className="space-y-2" id="add-person">
+      <Label htmlFor="standin-name">Add someone who isn&apos;t here yet</Label>
+      <div className="flex gap-2">
+        <Input id="standin-name" name="name" placeholder="Their name, e.g. Sam" maxLength={60} required />
+        <Button type="submit" variant="secondary" disabled={pending} className="shrink-0">{pending ? "Adding…" : "+ Add"}</Button>
+      </div>
+      <FormMessage state={state} />
+      <p className="text-xs text-gray-500">
+        They show up everywhere a member does: paid by, split between, settle up. When they open the invite link they pick
+        their name and everything logged for them becomes theirs.
+      </p>
+    </form>
+  );
+}

@@ -13,7 +13,7 @@ export type Database = {
   public: {
     Tables: {
       profiles: {
-        Row: { id: string; email: string; display_name: string; default_currency: string; created_at: string };
+        Row: { id: string; email: string; display_name: string; default_currency: string; created_at: string; standin_group: string | null; standin_added_by: string | null };
         Insert: never;
         Update: { display_name?: string; default_currency?: string };
         Relationships: [];
@@ -145,6 +145,9 @@ export type Database = {
       create_group: { Args: { group_name: string; group_currency?: string }; Returns: string };
       join_group: { Args: { code: string }; Returns: string };
       group_invite_preview: { Args: { code: string }; Returns: { name: string; members: number }[] };
+      group_standins: { Args: { code: string }; Returns: { id: string; name: string }[] };
+      add_standin: { Args: { gid: string; sid: string }; Returns: undefined };
+      claim_standin: { Args: { sid: string }; Returns: string };
       regenerate_join_code: { Args: { gid: string }; Returns: string };
       leave_group: { Args: { gid: string }; Returns: undefined };
       remove_member: { Args: { gid: string; uid: string }; Returns: undefined };

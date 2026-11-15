@@ -24,6 +24,8 @@ const icons: Record<string, string> = {
   member_joined: "👋",
   member_left: "🚪",
   member_removed: "🚫",
+  standin_added: "🧍",
+  standin_claimed: "🤝",
   group_renamed: "🏷️",
   comment_added: "💬",
   comment_deleted: "💬",
@@ -54,6 +56,8 @@ async function Activity({ params }: Pick<PageProps<"/groups/[id]/activity">, "pa
       case "member_joined": return <>{who(d.user_id)} joined the group</>;
       case "member_left": return <>{who(d.user_id)} left the group</>;
       case "member_removed": return <>{a} removed {who(d.user_id)}</>;
+      case "standin_added": return <>{a} added {who(d.user_id)} (not joined yet)</>;
+      case "standin_claimed": return <>{a} joined and took over “{String(d.name)}”</>;
       case "comment_added": return <>{a} commented on <b>“{String(d.description ?? "an expense")}”</b>: “{String(d.body)}”</>;
       case "comment_deleted": return <>{a} deleted a comment on <b>“{String(d.description ?? "an expense")}”</b></>;
       case "group_renamed": return <>{a} renamed the group from “{String(d.from)}” to “{String(d.to)}”</>;

@@ -6,7 +6,8 @@ import { loadGroup } from "@/lib/group-data";
 import { formatMoney } from "@/lib/money";
 import { deleteGroup, leaveGroup, regenerateCode, removeMember, updateGroupSettings } from "../../actions";
 import { CopyCode, InviteLink } from "../../copy-code";
-import { GroupSettingsForm } from "../../settings-form";
+import { AddStandInForm, GroupSettingsForm } from "../../settings-form";
+import { addStandIn, claimStandIn } from "../../standin-actions";
 
 export default function SettingsPage({ params, searchParams }: PageProps<"/groups/[id]/settings">) {
   return (
@@ -20,6 +21,7 @@ const savedMessages: Record<string, string> = {
   "1": "Settings saved.",
   code: "New invite code and link created. The old ones no longer work.",
   removed: "Member removed.",
+  standin: "Added. They can take over their spot from the invite link.",
 };
 
 async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/settings">, "params" | "searchParams">) {
@@ -58,7 +60,7 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
         </Card>
       </section>
 
-      <section>
+      <section id="members">
         <SectionTitle>Members</SectionTitle>
         <Card className="divide-y divide-gray-100 p-0">
           {members.map((m) => {
@@ -71,12 +73,25 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
                     {m.name}
                     {m.id === user.id && <span className="text-gray-400"> (you)</span>}
                     {m.id === group.created_by && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">creator</span>}
+                    {m.standin && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
                   </p>
                   <p className="truncate text-xs text-gray-500">
-                    {m.email || "no email (name only)"}
+                    {m.standin ? "added by name" : m.email || "no email (name only)"}
                     {bal.length > 0 && <> · balance {bal.map((b) => `${b.cents > 0 ? "+" : "−"}${formatMoney(Math.abs(b.cents), b.cur)}`).join(", ")}</>}
                   </p>
                 </div>
+                {/* "That's me" for anyone but the person who added them */}
+                {m.standin && m.addedBy !== user.id && (
+                  <ActionButton
+                    action={claimStandIn.bind(null, id, m.id)}
+                    confirmText={`Are you ${m.name}? Everything logged for ${m.name} becomes yours, and ${m.name} disappears from the list.`}
+                    variant="secondary"
+                    className="px-2 py-1 text-xs max-sm:min-h-10 max-sm:px-3 max-sm:text-sm"
+                    pendingText="Moving…"
+                  >
+                    That&apos;s me
+                  </ActionButton>
+                )}
                 {m.id !== user.id && (
                   <ActionButton
                     action={removeMember.bind(null, id, m.id)}
@@ -91,6 +106,9 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
               </div>
             );
           })}
+          <div className="px-5 py-4">
+            <AddStandInForm action={addStandIn.bind(null, id)} />
+          </div>
         </Card>
         <p className="mt-2 px-1 text-xs text-gray-500">Members must be settled up (zero balance) before they can leave or be removed.</p>
       </section>
