@@ -7,9 +7,14 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+// Link previews (Brian, 2026-11-15): title, description and the card from app/opengraph-image.tsx.
+const description = "Split costs with friends. Start with just your name, invite friends with a link, or try the demo. Free.";
 export const metadata: Metadata = {
-  title: "Splitwise Clone",
-  description: "Split expenses with your groups.",
+  metadataBase: new URL("https://split-tea.vercel.app"),
+  title: "Splitwise clone",
+  description,
+  openGraph: { title: "Splitwise clone", description, siteName: "Splitwise clone", type: "website" },
+  twitter: { card: "summary_large_image", title: "Splitwise clone", description },
 };
 
 export const viewport: Viewport = {

@@ -1,8 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink, Card, Logo } from "@/components/ui";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { joinByInvite } from "../actions";
 import { JoinForm } from "./join-form";
+
+// Link preview for a shared invite: "Join <group> on Splitwise clone" (the card itself is opengraph-image.tsx).
+export async function generateMetadata({ params }: PageProps<"/join/[code]">): Promise<Metadata> {
+  const code = decodeURIComponent((await params).code).trim().toUpperCase();
+  const supabase = await createClient();
+  const name = /^[A-Z0-9]{6}$/.test(code) ? (await supabase.rpc("group_invite_preview", { code })).data?.[0]?.name : undefined;
+  const title = name ? `Join ${name} on Splitwise clone` : "Join a group on Splitwise clone";
+  const description = "Tap to join with just your name. No sign-up.";
+  return { title, description, openGraph: { title, description }, twitter: { card: "summary_large_image", title, description } };
+}
 
 // Invite link: /join/<join code>. Friends open it, type a name, and land in the group (no sign-up).
 export default async function JoinPage({ params }: PageProps<"/join/[code]">) {

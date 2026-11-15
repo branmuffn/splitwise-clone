@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // /start and /join/<code> let people begin with just a name (anonymous sign-in, 2026-11-15).
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/start", "/join"];
+// /opengraph-image is the link-preview card that Messages, WhatsApp, LinkedIn... fetch without signing in.
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/start", "/join", "/opengraph-image"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
