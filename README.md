@@ -12,6 +12,14 @@ Pushing to `main` on GitHub deploys to production automatically.
 - **One-click demo** (for reviewers): "✨ Try the demo" on the sign-in and sign-up pages creates a
   private sample account with two groups, two sample friends, and expenses showing every feature, then
   signs you in. Each click is a fresh sandbox, so reviewers can't affect each other.
+- **Start now (no sign-up)**: start with just a name. The account lives in that browser until you add an
+  email and password on your profile (same account, nothing lost). A reminder suggests adding one, and signing
+  out of a name-only account asks first.
+- **Invite links**: every group has a link (`/join/<code>`). Friends open it, type their name, and land in the
+  group. Phones open the share sheet; computers copy the link.
+- **Add people before they join**: add friends by name, then log and split every expense yourself. When a friend
+  opens the invite link they pick their name ("Which one are you?") and take over everything logged for them.
+  Someone already in the group can tap "That's me" instead.
 - **Accounts**: email + password sign up / sign in / sign out, forgot-password email, change password,
   editable display name and default currency.
 - **Groups**: create (auto 6-character join code) or join by code; rename, set a default currency,
