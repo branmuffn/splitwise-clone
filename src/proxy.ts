@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password"];
+// /start and /join/<code> let people begin with just a name (anonymous sign-in, 2026-11-15).
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/start", "/join"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -36,7 +37,7 @@ export async function proxy(request: NextRequest) {
   if (!signedIn && !isPublic) {
     return redirectWithCookies(request, response, "/login");
   }
-  if (signedIn && (pathname === "/login" || pathname === "/signup")) {
+  if (signedIn && (pathname === "/login" || pathname === "/signup" || pathname === "/start")) {
     return redirectWithCookies(request, response, "/");
   }
 

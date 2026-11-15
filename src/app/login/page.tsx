@@ -1,5 +1,5 @@
-import { AuthForm } from "../auth/auth-form";
+import { LoginLanding } from "../auth/login-landing";
 
 export default function LoginPage() {
-  return <AuthForm mode="login" />;
+  return <LoginLanding />;
 }

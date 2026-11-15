@@ -12,7 +12,7 @@ import { loadGroup, type GroupData } from "@/lib/group-data";
 import { formatMoney, toDecimalString } from "@/lib/money";
 import { getRates } from "@/lib/rates";
 import { deletePayment } from "../payment-actions";
-import { CopyCode } from "../copy-code";
+import { CopyCode, InviteLink } from "../copy-code";
 
 export default function GroupPage({ params, searchParams }: PageProps<"/groups/[id]">) {
   return (
@@ -26,6 +26,7 @@ const notices: Record<string, string> = {
   "deleted=expense": "Expense deleted.",
   "deleted=payment": "Payment deleted.",
   "paid=1": "Payment recorded.",
+  "joined=1": "You joined the group. Welcome!",
 };
 
 // Balances and suggested payments, either per currency or converted into one.
@@ -102,8 +103,11 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
             <YourBalance view={view} userId={user.id} />
           </div>
           <div className="sm:text-right">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Invite code</p>
-            <CopyCode code={group.join_code} />
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Invite friends</p>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <InviteLink url={`${origin}/join/${group.join_code}`} groupName={group.name} />
+              <CopyCode code={group.join_code} />
+            </div>
           </div>
         </div>
         {/* Phones (Brian picked S2, 2026-11-14): Add expense moves to the round + button, Settle up goes full width, and

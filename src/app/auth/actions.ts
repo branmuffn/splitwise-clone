@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createDemoAccount } from "@/lib/demo";
+import { parseName } from "@/lib/names";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; message?: string } | undefined;
@@ -81,4 +82,15 @@ export async function startDemo(): Promise<FormState> {
     return { error: "The demo couldn't be set up right now. Please try again in a minute." };
   }
   redirect(`/groups/${tripId}?demo=1`);
+}
+
+// "Start now": a name-only account (Supabase anonymous sign-in). No email or password; it lives in this browser
+// until the person adds an email on their profile.
+export async function startNameOnly(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { name, error: nameError } = parseName(formData.get("name"));
+  if (!name) return { error: nameError };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInAnonymously({ options: { data: { display_name: name } } });
+  if (error) return { error: error.message };
+  redirect("/?welcome=1");
 }

@@ -51,5 +51,8 @@ export async function getCurrentUser() {
     email: profile?.email ?? "",
     displayName: profile?.display_name ?? "",
     defaultCurrency: profile?.default_currency ?? "USD",
+    // Name-only accounts ("Start now" / invite links, 2026-11-15) are Supabase anonymous users: no email, no password.
+    // They live in this browser only until they add an email on the profile page.
+    nameOnly: data.claims.is_anonymous === true && !profile?.email,
   };
 }

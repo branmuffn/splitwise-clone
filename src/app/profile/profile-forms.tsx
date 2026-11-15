@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { changePassword, updateProfile } from "./actions";
+import { addEmail, changePassword, updateProfile } from "./actions";
 import { Button, FormMessage, Input, Label, Select } from "@/components/ui";
 import { CURRENCIES } from "@/lib/money";
 
@@ -40,6 +40,25 @@ export function PasswordForm({ next = "" }: { next?: string }) {
       </div>
       <FormMessage state={state} />
       <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Update password"}</Button>
+    </form>
+  );
+}
+
+// Name-only account -> email account (keeps every group and expense).
+export function AddEmailForm() {
+  const [state, action, pending] = useActionState(addEmail, undefined);
+  return (
+    <form action={action} className="space-y-4">
+      <div>
+        <Label htmlFor="add-email-input">Email</Label>
+        <Input id="add-email-input" name="email" type="email" autoComplete="email" required />
+      </div>
+      <div>
+        <Label htmlFor="add-email-password">Choose a password</Label>
+        <Input id="add-email-password" name="password" type="password" autoComplete="new-password" minLength={6} required />
+      </div>
+      <FormMessage state={state} />
+      <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Add email"}</Button>
     </form>
   );
 }

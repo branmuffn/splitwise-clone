@@ -144,6 +144,7 @@ export type Database = {
     Functions: {
       create_group: { Args: { group_name: string; group_currency?: string }; Returns: string };
       join_group: { Args: { code: string }; Returns: string };
+      group_invite_preview: { Args: { code: string }; Returns: { name: string; members: number }[] };
       regenerate_join_code: { Args: { gid: string }; Returns: string };
       leave_group: { Args: { gid: string }; Returns: undefined };
       remove_member: { Args: { gid: string; uid: string }; Returns: undefined };

@@ -1,10 +1,11 @@
+import { headers } from "next/headers";
 import { ActionButton } from "@/components/action-button";
 import { PageShell } from "@/components/page-shell";
 import { Avatar, BackLink, Card, FormMessage, SectionTitle } from "@/components/ui";
 import { loadGroup } from "@/lib/group-data";
 import { formatMoney } from "@/lib/money";
 import { deleteGroup, leaveGroup, regenerateCode, removeMember, updateGroupSettings } from "../../actions";
-import { CopyCode } from "../../copy-code";
+import { CopyCode, InviteLink } from "../../copy-code";
 import { GroupSettingsForm } from "../../settings-form";
 
 export default function SettingsPage({ params, searchParams }: PageProps<"/groups/[id]/settings">) {
@@ -17,7 +18,7 @@ export default function SettingsPage({ params, searchParams }: PageProps<"/group
 
 const savedMessages: Record<string, string> = {
   "1": "Settings saved.",
-  code: "New invite code created. The old one no longer works.",
+  code: "New invite code and link created. The old ones no longer work.",
   removed: "Member removed.",
 };
 
@@ -25,6 +26,8 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
   const { id } = await params;
   const { saved } = await searchParams;
   const { group, members, user, balances } = await loadGroup(id);
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const owes = (uid: string) =>
     [...balances].map(([cur, m]) => ({ cur, cents: m.get(uid) ?? 0 })).filter((x) => x.cents !== 0);
 
@@ -41,10 +44,13 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
       <section>
         <SectionTitle>Invite code</SectionTitle>
         <Card className="flex flex-wrap items-center justify-between gap-3">
-          <CopyCode code={group.join_code} />
+          <span className="flex flex-wrap items-center gap-2">
+            <InviteLink url={`${origin}/join/${group.join_code}`} groupName={group.name} />
+            <CopyCode code={group.join_code} />
+          </span>
           <ActionButton
             action={regenerateCode.bind(null, id)}
-            confirmText="Create a new code? The current code will stop working."
+            confirmText="Create a new code? The current code and invite link will stop working."
             pendingText="Creating…"
           >
             New code
@@ -67,7 +73,7 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
                     {m.id === group.created_by && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">creator</span>}
                   </p>
                   <p className="truncate text-xs text-gray-500">
-                    {m.email}
+                    {m.email || "no email (name only)"}
                     {bal.length > 0 && <> · balance {bal.map((b) => `${b.cents > 0 ? "+" : "−"}${formatMoney(Math.abs(b.cents), b.cur)}`).join(", ")}</>}
                   </p>
                 </div>

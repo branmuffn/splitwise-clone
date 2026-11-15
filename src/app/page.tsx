@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { PageShell } from "@/components/page-shell";
 import { Card, FormMessage, SectionTitle } from "@/components/ui";
 import { computeBalances, netFor } from "@/lib/balances";
@@ -7,6 +8,7 @@ import { formatMoney } from "@/lib/money";
 import { getRates } from "@/lib/rates";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { CreateGroupForm, JoinGroupForm } from "./groups/group-forms";
+import { hideEmailTip } from "./profile/actions";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -72,6 +74,17 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
     <>
       {notice && <FormMessage state={{ message: notice }} />}
       <h1 className="text-2xl font-semibold">Hi, {user.displayName} 👋</h1>
+      {user.nameOnly && (sp.welcome || (await cookies()).get("email_tip")?.value !== "hidden") && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <b>Keep your account safe.</b> It lives in this browser only. Add an email so you can sign in on another
+          phone or after clearing your browser.{" "}
+          <Link href="/profile#add-email" className="font-semibold text-brand-700 underline">Add email</Link>
+          {" · "}
+          <form action={hideEmailTip} className="inline">
+            <button type="submit" className="font-semibold text-brand-700 underline">Not now</button>
+          </form>
+        </div>
+      )}
 
       <Card className="grid grid-cols-2 divide-x divide-gray-100 p-0 text-center">
         <div className="px-4 py-4">

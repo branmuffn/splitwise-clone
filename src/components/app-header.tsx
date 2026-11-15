@@ -55,11 +55,18 @@ async function UserMenu() {
         </span>
         <span className="hidden opacity-90 sm:inline">{user.displayName || user.email}</span>
       </Link>
-      <form action={signOut}>
-        <Button variant="ghost" className="px-3 py-1.5 text-white hover:bg-white/15">
+      {user.nameOnly ? (
+        // No email = no way back in, so explain first (profile page) instead of signing out at once.
+        <Link href="/profile?signout=1#signout" className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/15">
           Sign out
-        </Button>
-      </form>
+        </Link>
+      ) : (
+        <form action={signOut}>
+          <Button variant="ghost" className="px-3 py-1.5 text-white hover:bg-white/15">
+            Sign out
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
