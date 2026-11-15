@@ -11,6 +11,8 @@ import { filterExpenses, filterPayments, hasFilters, parseFilters, type LedgerFi
 import { loadGroup, type GroupData } from "@/lib/group-data";
 import { formatMoney, toDecimalString } from "@/lib/money";
 import { getRates } from "@/lib/rates";
+import { reminderText } from "@/lib/remind";
+import { RemindButton } from "@/components/remind-button";
 import { deletePayment } from "../payment-actions";
 import { CopyCode, InviteLink } from "../copy-code";
 
@@ -129,10 +131,10 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-gray-500">Show balances:</span>
           <div className="inline-flex rounded-lg bg-gray-100 p-1">
-            <Link href={`/groups/${id}${filterQuery ? `?${filterQuery}` : ""}`} className={`rounded-md px-3 py-1 font-medium ${!view.converted ? "bg-white text-brand-700 shadow-sm" : "text-gray-600"}`}>
+            <Link href={`/groups/${id}${filterQuery ? `?${filterQuery}` : ""}`} className={`rounded-md px-3 py-1 font-medium ${!view.converted ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}>
               By currency
             </Link>
-            <Link href={`/groups/${id}?view=converted${filterQuery ? `&${filterQuery}` : ""}`} className={`rounded-md px-3 py-1 font-medium ${view.converted ? "bg-white text-brand-700 shadow-sm" : "text-gray-600"}`}>
+            <Link href={`/groups/${id}?view=converted${filterQuery ? `&${filterQuery}` : ""}`} className={`rounded-md px-3 py-1 font-medium ${view.converted ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}>
               All in {group.default_currency}
             </Link>
           </div>
@@ -214,8 +216,8 @@ function Balances({ data, view }: { data: GroupData; view: BalanceView }) {
 
 function Suggested({ data, view, origin }: { data: GroupData; view: BalanceView; origin: string }) {
   const { user, youOr, group, members } = data;
-  const emailOf = (uid: string) => members.find((m) => m.id === uid)?.email ?? "";
-  const me = members.find((m) => m.id === user.id)?.name ?? "me";
+  const memberOf = (uid: string) => members.find((m) => m.id === uid);
+  const me = memberOf(user.id)?.name ?? "me";
   return (
     <section>
       <SectionTitle>{view.converted || group.simplify_debts ? "Suggested payments" : "Who owes whom"}</SectionTitle>
@@ -227,12 +229,15 @@ function Suggested({ data, view, origin }: { data: GroupData; view: BalanceView;
             {view.transfers.map((t) => {
               const amount = formatMoney(t.cents, t.currency);
               const settleUrl = `/groups/${group.id}/settle?from=${t.from}&to=${t.to}&amount=${toDecimalString(t.cents, t.currency)}&currency=${t.currency}`;
-              const remind =
-                t.to === user.id && t.from !== user.id && emailOf(t.from)
-                  ? `mailto:${encodeURIComponent(emailOf(t.from))}?subject=${encodeURIComponent(`Reminder: ${amount} for ${group.name}`)}&body=${encodeURIComponent(
-                      `Hi ${youOr(t.from)},\n\nJust a friendly reminder that you owe me ${amount} for "${group.name}".\n\nYou can see the details and record the payment here:\n${origin}${settleUrl}\n\nThanks!\n${me}`,
-                    )}`
-                  : null;
+              // Remind whoever owes you: a drafted email if they have an address, else the share sheet / copy
+              // (stand-ins get the invite link, since they can't open the group until they pick their name).
+              const debtor = t.to === user.id && t.from !== user.id ? memberOf(t.from) : undefined;
+              const remind = debtor
+                ? reminderText({
+                    to: debtor.name, from: me, amounts: [amount], groupName: group.name, standin: debtor.standin,
+                    link: debtor.standin ? `${origin}/join/${group.join_code}` : `${origin}${settleUrl}`,
+                  })
+                : null;
               return (
                 <li key={`${t.currency}-${t.from}-${t.to}`} className="flex items-center justify-between gap-3 px-5 py-3">
                   <span className="text-sm">
@@ -244,10 +249,13 @@ function Suggested({ data, view, origin }: { data: GroupData; view: BalanceView;
                     <span className="font-semibold">{view.converted && "≈"}{amount}</span>
                   </span>
                   <span className="flex shrink-0 gap-1">
-                    {remind && (
-                      <a href={remind} className="rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm" title={`Email ${youOr(t.from)} a reminder`}>
-                        Remind
-                      </a>
+                    {remind && debtor && (
+                      <RemindButton
+                        name={debtor.name}
+                        email={debtor.email}
+                        reminder={remind}
+                        className="rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm"
+                      />
                     )}
                     <Link href={settleUrl} className="rounded-md px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm">
                       Record
@@ -266,7 +274,7 @@ function Suggested({ data, view, origin }: { data: GroupData; view: BalanceView;
 function FilterBar({ data, filters, keepView }: { data: GroupData; filters: LedgerFilters; keepView: boolean }) {
   const currencies = [...new Set([...data.expenses.map((e) => e.currency), ...data.payments.map((p) => p.currency)])].sort();
   return (
-    <details className="group rounded-2xl border border-black/5 bg-white shadow-sm" open={hasFilters(filters)}>
+    <details className="group rounded-2xl border border-line bg-surface shadow-sm" open={hasFilters(filters)}>
       <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3 text-sm font-medium text-gray-700">
         <span>🔍 Search &amp; filter</span>
         <span className="text-gray-400 transition group-open:rotate-180">▾</span>
@@ -307,7 +315,7 @@ function FilterBar({ data, filters, keepView }: { data: GroupData; filters: Ledg
           <Input id="f-to" name="to" type="date" defaultValue={filters.to ?? ""} />
         </div>
         <div className="flex items-end gap-2">
-          <button type="submit" className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600">Apply</button>
+          <button type="submit" className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95">Apply</button>
           {hasFilters(filters) && (
             <Link href={`/groups/${data.group.id}${keepView ? "?view=converted" : ""}`} className="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100">
               Clear

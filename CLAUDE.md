@@ -87,6 +87,23 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
 - Supabase rate-limits anonymous sign-ins (all come from Vercel's servers): keep the limit raised (Auth > Rate Limits).
 - Tests: `tests/e2e/nameonly.mjs` (26 checks), `tests/e2e/standins.mjs` (25 checks); both in `npm run test:e2e`.
 
+## Friends, Remind, dark mode (Brian, 2026-11-15)
+
+- **Friends (F1)**: Home has Groups | Friends tabs (`/?tab=friends`); `/friends/[id]` shows totals and a per-group
+  breakdown with Remind / Record payment / Settle up. Pure logic `src/lib/friends.ts` (`friendBalances`, unit-tested):
+  per group it uses the same transfers as the group page (simplified or pairwise), so numbers match. Loader
+  `src/lib/friend-data.ts`. No schema change. 1-on-1 expenses outside groups (F3) were not chosen.
+- **Remind, no email service** (Brian declined a domain/email provider): `src/components/remind-button.tsx` +
+  `src/lib/remind.ts`. With an email: mailto draft. Without one (name-only, stand-ins): share sheet on phones, copy on
+  computers; stand-ins get the invite link. `data-remind-text` holds the message (tests read it).
+- **Dark mode (D1 Charcoal)**: all in `globals.css`. Cards/inputs use `bg-surface`, hairlines `border-line` (never
+  `bg-white`/`border-black/5` for surfaces; `text-white` stays white). Dark values override Tailwind's palette vars
+  (gray scale flipped) under `:root[data-theme=dark]` and the OS media query (declared twice on purpose). Profile >
+  Appearance (`src/app/profile/theme-switch.tsx`) writes a `theme` cookie; an inline script in `layout.tsx` applies it
+  before paint (not read on the server, so /login, /signup, /start stay static). Chart colors are `--chart-*` vars
+  (dark values validated with the dataviz palette validator). Primary buttons hover with `brightness`, not brand-600.
+- Tests: `tests/e2e/friends.mjs` (22 checks) in `npm run test:e2e`; unit tests `friends.test.ts`, `remind.test.ts`.
+
 ## Architecture
 
 - `src/lib/`: pure, unit-tested logic: `money.ts` (minor units per currency via Intl),
@@ -168,15 +185,14 @@ segments), and every page contains Next's hidden "could not be found" template, 
 
 Ask the user which they want; don't start unprompted.
 
-1. **Server-sent reminder emails**, plus optional weekly automatic nudges. Needs an email
+1. **Server-sent reminder emails** (2026-11-15: Brian chose mailto + share instead, no provider for now), plus optional weekly automatic nudges. Needs an email
    provider (e.g. Resend): the user creates an account and adds `RESEND_API_KEY` to Vercel
    themselves. Call its HTTP API with `fetch` (no SDK, per the no-extra-libraries rule). Weekly
    nudges need a Vercel Cron job, and that needs a way to read balances without the service key
    (e.g. a SECURITY DEFINER RPC guarded by a cron secret).
-2. **Friends / 1-on-1 expenses** outside groups (like Splitwise's Friends tab). Simplest model:
+2. **Friends**: DONE 2026-11-15 (F1). Still open: 1-on-1 expenses outside groups (like Splitwise's Friends tab). Simplest model:
    an implicit two-person group per friend pair.
-3. **Installable PWA**: web app manifest, icons, and an offline view of balances.
-4. **Polish**: dark mode (tokens are in `globals.css`; charts would need dark-validated colors via
-   the dataviz skill), avatars/profile photos (Storage), and an "undo delete" for expenses.
+3. **Installable PWA** (Brian said no for now, 2026-11-15): web app manifest, icons, and an offline view of balances.
+4. **Polish**: dark mode DONE 2026-11-15; still open: avatars/profile photos (Storage), and an "undo delete" for expenses.
 5. **CI**: a GitHub Action running `npm test`, lint, build, and the e2e suite against a Vercel
    preview deployment on each pull request.

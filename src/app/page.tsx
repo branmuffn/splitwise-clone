@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { OwedLines } from "@/components/owed-lines";
 import { PageShell } from "@/components/page-shell";
-import { Card, FormMessage, SectionTitle } from "@/components/ui";
+import { Avatar, Card, FormMessage } from "@/components/ui";
 import { computeBalances, netFor } from "@/lib/balances";
 import { convertMinor } from "@/lib/convert";
+import { buildFriends, MEMBER_SELECT } from "@/lib/friend-data";
+import type { Friend } from "@/lib/friends";
 import { formatMoney } from "@/lib/money";
 import { getRates } from "@/lib/rates";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
@@ -26,12 +29,16 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
   // Add any recurring expenses that have come due before computing balances.
   const { data: myGroups } = await supabase.from("group_members").select("group_id").eq("user_id", user.id);
   await Promise.all((myGroups ?? []).map((g) => supabase.rpc("materialize_recurring", { gid: g.group_id })));
-  const [{ data: groups }, { data: expenses }, { data: payments }, rates] = await Promise.all([
-    supabase.from("groups").select("id, name, group_members(count)").order("created_at", { ascending: false }),
+  const [{ data: groups }, { data: expenses }, { data: payments }, { data: memberRows }, rates] = await Promise.all([
+    supabase.from("groups").select("id, name, simplify_debts, join_code, group_members(count)").order("created_at", { ascending: false }),
     supabase.from("expenses").select("group_id, amount_cents, currency, paid_by, expense_splits(user_id, share_cents)"),
     supabase.from("payments").select("group_id, from_user, to_user, amount_cents, currency"),
+    supabase.from("group_members").select(MEMBER_SELECT).order("joined_at"),
     getRates(),
   ]);
+  // Friends tab (Brian picked F1, 2026-11-15): everyone you share a group with, totals across all groups.
+  const tab = sp.tab === "friends" ? "friends" : "groups";
+  const friends = buildFriends(user.id, groups ?? [], memberRows ?? [], expenses ?? [], payments ?? [], user.defaultCurrency);
 
   const perGroup = new Map(
     (groups ?? []).map((g) => [
@@ -108,8 +115,25 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       </Card>
 
       <section>
-        <SectionTitle>Your groups</SectionTitle>
-        {groups && groups.length > 0 ? (
+        <h2 className="sr-only">{tab === "friends" ? "Your friends" : "Your groups"}</h2>
+        <nav aria-label="Groups or friends" className="mb-3 flex gap-1.5 rounded-xl bg-gray-100 p-1">
+          {([
+            ["groups", "/", `Groups (${groups?.length ?? 0})`],
+            ["friends", "/?tab=friends", `Friends (${friends.length})`],
+          ] as const).map(([key, href, label]) => (
+            <Link
+              key={key}
+              href={href}
+              aria-current={tab === key ? "page" : undefined}
+              className={`flex-1 rounded-lg px-3 py-2.5 text-center font-semibold transition ${tab === key ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+        {tab === "friends" ? (
+          <FriendList friends={friends} />
+        ) : groups && groups.length > 0 ? (
           <Card className="divide-y divide-gray-100 p-0">
             {groups.map((g) => {
               const lines = perGroup.get(g.id) ?? [];
@@ -152,5 +176,32 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
         <JoinGroupForm />
       </div>
     </>
+  );
+}
+
+function FriendList({ friends }: { friends: Friend[] }) {
+  if (friends.length === 0) {
+    return <Card className="text-center text-gray-500">No friends yet. People you share a group with show up here.</Card>;
+  }
+  return (
+    <Card className="divide-y divide-gray-100 p-0">
+      {friends.map((f) => (
+        <Link key={f.id} href={`/friends/${f.id}`} className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-gray-50 max-sm:flex-wrap max-sm:gap-y-1">
+          <span className="flex min-w-0 items-center gap-3">
+            <Avatar name={f.name} id={f.id} size="lg" />
+            <span className="min-w-0">
+              <span className="block truncate font-medium">{f.name}</span>
+              <span className="text-xs text-gray-500">
+                {f.standin && "not joined yet · "}
+                {f.groups.length === 1 ? `In ${f.groups[0].groupName}` : `In ${f.groups.length} groups`}
+              </span>
+            </span>
+          </span>
+          <span className="shrink-0 text-right text-sm max-sm:w-full max-sm:pl-13 max-sm:text-left">
+            <OwedLines lines={f.totals} />
+          </span>
+        </Link>
+      ))}
+    </Card>
   );
 }

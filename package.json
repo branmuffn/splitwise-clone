@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test src/lib/*.test.ts",
-    "test:e2e": "node tests/e2e/core.mjs && node tests/e2e/extras.mjs && node tests/e2e/demo.mjs && node tests/e2e/nameonly.mjs && node tests/e2e/standins.mjs"
+    "test:e2e": "node tests/e2e/core.mjs && node tests/e2e/extras.mjs && node tests/e2e/demo.mjs && node tests/e2e/nameonly.mjs && node tests/e2e/standins.mjs && node tests/e2e/friends.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -38,11 +38,15 @@ Pushing to `main` on GitHub deploys to production automatically.
   renames, automatic recurring adds.
 - **Dashboard**: your total "you are owed" / "you owe" across groups, per currency, plus an approximate
   overall total converted to your default currency.
+- **Friends**: a Friends tab on the home page lists everyone you share a group with and what you owe each other
+  across all groups. A friend's page breaks it down by group, with Remind, Record payment, and Settle up.
 - **Currency conversion**: view a group's balances and suggested payments all in its default currency
   at today's rates (open.er-api.com, no key needed).
 - **Search & filters** (text, category, person, currency, dates) and **CSV export**.
 - **Charts**: spending by category, by month, and paid-vs-share per person.
-- **Reminders**: "Remind" opens a prefilled email to whoever owes you.
+- **Reminders**: "Remind" opens a prefilled email to whoever owes you. For friends without an email (name-only
+  or not joined yet), phones open the share sheet with the same message and computers copy it.
+- **Dark mode**: follows your phone or computer, or pick Light or Dark on your profile.
 - **Live updates**: group pages refresh automatically via Supabase Realtime.
 
 Not built: real payments, push notifications, and server-sent email (reminders use your own email app;

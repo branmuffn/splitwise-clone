@@ -55,7 +55,7 @@ await step("email account joins from the link by signing in", async () => {
   check("signed in and joined", r.url.pathname === g && r.text.includes("3 members"), r.url.href);
 });
 
-await step("no Remind for name-only friends", async () => {
+await step("Remind for name-only friends shares a message (no email)", async () => {
   const page = await O.get(`${g}/expenses/new`);
   const ids = memberIds(page.html);
   const form = O.forms(page.html).find((f) => f.includes('name="description"'));
@@ -65,7 +65,7 @@ await step("no Remind for name-only friends", async () => {
   });
   r = await O.get(g);
   check("Nina owes Omar", r.text.includes(`${nina} owes you $15.00`), r.text.slice(r.text.indexOf("Who owes"), r.text.indexOf("Who owes") + 200));
-  check("no Remind button (Nina has no email)", !/>\s*Remind\s*</.test(r.html));
+  check("Remind shares a message instead of an email (Nina has no email)", r.html.includes("data-remind-share") && /data-remind-text="[^"]*friendly reminder/.test(r.html) && !r.html.includes("mailto:"));
   r = await O.get(`${g}/settings`);
   check("settings say name only", r.text.includes("no email (name only)"));
 });
@@ -90,7 +90,7 @@ await step("add an email later and keep everything", async () => {
   r = await N2.get(g);
   check("still in the group", r.text.includes(`Cabin ${run}`) && r.text.includes("3 members"));
   r = await O.get(g);
-  check("Remind appears now that Nina has an email", />\s*Remind\s*</.test(r.html));
+  check("Remind emails Nina now that she has an email", decodeURIComponent(/href="(mailto:[^"]+)"/.exec(r.html)?.[1] ?? "").includes(email("nina")));
 });
 
 console.log(failureCount() ? `\n${failureCount()} FAILURES` : "\nALL PASS");

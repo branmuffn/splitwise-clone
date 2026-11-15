@@ -56,7 +56,8 @@ await step("Brian logs and splits everything on his own", async () => {
   check("Brian gets back $35", bal(r.text, brian) === "gets back $35.00", bal(r.text, brian));
   check("Sam owes $15", bal(r.text, sam) === "owes $15.00", bal(r.text, sam));
   check("Riley owes $20", bal(r.text, riley) === "owes $20.00", bal(r.text, riley));
-  check("no Remind for stand-ins", !/>\s*Remind\s*</.test(r.html));
+  const remindText = /data-remind-text="([^"]*)"/.exec(r.html)?.[1] ?? "";
+  check("Remind for stand-ins shares the invite link (no email)", remindText.includes("pick your name") && remindText.includes(`/join/${code}`) && !r.html.includes("mailto:"), remindText.slice(0, 160));
 });
 
 await step("Sam opens the invite link and picks his name", async () => {
@@ -88,7 +89,7 @@ await step("Riley joins with an email account, then taps That's me", async () =>
   check("3 members, nobody waiting", r.text.includes("3 members") && !r.text.includes("not joined yet"));
   r = await B.get(g);
   check("Brian still gets back $35", bal(r.text, brian) === "gets back $35.00", bal(r.text, brian));
-  check("Remind appears for Riley (has an email)", />\s*Remind\s*</.test(r.html));
+  check("Remind emails Riley (has an email)", /href="mailto:[^"]+"/.test(r.html));
 });
 
 await step("someone can't take a spot that's gone", async () => {
