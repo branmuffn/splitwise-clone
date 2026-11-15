@@ -82,7 +82,8 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
   (`splitwise.quiet`) and one `standin_claimed` entry is written.
 - SQL: `supabase/migrations/20261115120000_name_only_accounts.sql` and `20261115130000_standins.sql` (both run in
   production 2026-11-15, mirrored in schema.sql). The nightly cleanup also removes test accounts after 1 day
-  (`claude-e2e-*@example.com`, name-only "E2E *") and stand-ins left in no group.
+  (`claude-e2e-*@example.com`, name-only "E2E *") and stand-ins left in no group, and (20261115140000) name-only
+  accounts still in no group 30 days after they started (Brian, 2026-11-15).
 - Supabase rate-limits anonymous sign-ins (all come from Vercel's servers): keep the limit raised (Auth > Rate Limits).
 - Tests: `tests/e2e/nameonly.mjs` (26 checks), `tests/e2e/standins.mjs` (25 checks); both in `npm run test:e2e`.
 
