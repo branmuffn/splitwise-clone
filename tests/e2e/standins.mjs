@@ -10,7 +10,8 @@ let r, g, code, ids = {};
 // "Name (you) not joined yet gets back $35.00" -> "gets back $35.00"
 const bal = (t, name) => {
   const seg = t.split("Balances")[1]?.split(/Suggested payments|Who owes whom/)[0] ?? "";
-  const m = new RegExp(`${name}(?: \\(you\\))?(?: not joined yet)?((?:\\s*(?:gets back|owes) [^A-Z]*?\\S+)*|\\s*settled up)`).exec(seg);
+  // Visible text runs together ("E2E Samnot joined yetowes $15.00E"), so read the first amount after the name.
+  const m = new RegExp(`${name}(?:\\s*\\(you\\))?(?:\\s*not joined yet)?\\s*((?:gets back|owes) [^\\d]*[\\d,]+\\.\\d{2}|settled up)`).exec(seg);
   return m?.[1]?.trim() ?? "";
 };
 const addPerson = async (who, name) => {
@@ -44,7 +45,7 @@ await step("Brian starts a trip and adds two people who haven't joined", async (
   r = await B.get(g);
   check("group has 3 members", r.text.includes("3 members"));
   r = await B.get(`${g}/activity`);
-  check("activity says who was added", r.text.includes(`${brian} added ${sam} (not joined yet)`) || r.text.includes(`You added ${sam} (not joined yet)`), r.text.slice(0, 400));
+  check("activity says who was added", r.text.includes(`You added ${sam} by name`), r.text.slice(0, 400));
 });
 
 await step("Brian logs and splits everything on his own", async () => {
