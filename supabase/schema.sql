@@ -159,6 +159,29 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- When a name-only account adds an email (Profile -> Add an email), copy it to its profile,
+--    so friends' Remind buttons and the app's "no email yet" reminders stay right.
+create or replace function public.handle_user_email_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.profiles set email = coalesce(new.email, '') where id = new.id;
+  return new;
+end;
+$$;
+
+revoke execute on function public.handle_user_email_change() from public, anon, authenticated;
+
+drop trigger if exists on_auth_user_email_changed on auth.users;
+create trigger on_auth_user_email_changed
+  after update of email on auth.users
+  for each row
+  when (old.email is distinct from new.email)
+  execute function public.handle_user_email_change();
+
 -- ============================================================
 -- SECURITY DEFINER helpers (bypass RLS, so policies on
 -- group_members can use them without infinite recursion)
@@ -314,6 +337,23 @@ begin
   return gid;
 end;
 $$;
+
+-- Invite link preview. /join/<code> shows the group's name and member count before you join.
+--    Anyone holding the code can already join, so showing its name is no extra exposure.
+create or replace function public.group_invite_preview(code text)
+returns table (name text, members integer)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select g.name, (select count(*)::integer from public.group_members m where m.group_id = g.id)
+  from public.groups g
+  where g.join_code = upper(trim(code));
+$$;
+
+revoke execute on function public.group_invite_preview(text) from public;
+grant execute on function public.group_invite_preview(text) to anon, authenticated;
 
 create or replace function public.regenerate_join_code(gid uuid)
 returns text

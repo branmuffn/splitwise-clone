@@ -216,7 +216,7 @@ await step("members, codes, leave, remove", async () => {
   await C.submit("/", "code", { code });
   r = await A.click(`${g}/settings`, "New code");
   const newCode = /tracking-\[0\.3em\][^>]*>([A-Z0-9]{6})/.exec(r.html)?.[1];
-  check("new invite code", r.text.includes("New invite code created") && newCode && newCode !== code);
+  check("new invite code", r.text.includes("New invite code and link created") && newCode && newCode !== code);
   r = await D.submit("/", "code", { code });
   check("old code rejected", r.html.includes("No group found with that code"));
   r = await B.click(`${g}/settings`, "Leave group");
