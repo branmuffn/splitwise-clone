@@ -13,7 +13,8 @@ feature list.
 |---|---|---|
 | Code | this folder; GitHub `branmuffn/splitwise-clone` (`main`) | Push to `main` and Vercel deploys production automatically |
 | Live site | https://split-tea.vercel.app | Vercel project `branmuffn/splitwise-clone` |
-| Database / auth / storage / realtime | Supabase project `tvtlsgeenqftstbqhotv` | Schema is `supabase/schema.sql` |
+| Database / auth / storage / realtime | Supabase project `tvtlsgeenqftstbqhotv` (region us-west-2, Oregon) | Schema is `supabase/schema.sql` |
+| Server region | `vercel.json` `regions: ["pdx1"]` (Portland, next to the database; was iad1, 2026-11-15) | Each page makes several database trips, so this matters |
 | Env vars | `.env.local` (git-ignored) and Vercel Production | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
 
 ## Working rules (the user's preferences)
