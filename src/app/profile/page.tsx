@@ -3,6 +3,7 @@ import { PageShell } from "@/components/page-shell";
 import { Button, Card, FormMessage, SectionTitle } from "@/components/ui";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { AddEmailForm, PasswordForm, ProfileForm } from "./profile-forms";
+import { ThemeSwitch } from "./theme-switch";
 
 export default function ProfilePage({ searchParams }: PageProps<"/profile">) {
   return (
@@ -59,6 +60,13 @@ async function Profile({ searchParams }: Pick<PageProps<"/profile">, "searchPara
           </Card>
         </section>
       )}
+      <section>
+        <SectionTitle>Appearance</SectionTitle>
+        <Card className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-gray-600">Dark mode. Auto follows your phone or computer.</p>
+          <ThemeSwitch />
+        </Card>
+      </section>
     </>
   );
 }

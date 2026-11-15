@@ -7,10 +7,97 @@
   --color-brand-600: #17a689;
   --color-brand-700: #13876f;
   --color-owe: #ff652f;
+  /* Cards, inputs and active toggles (bg-surface), and their hairline borders (border-line). */
+  --color-surface: #ffffff;
+  --color-line: rgb(0 0 0 / 0.05);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+:root {
+  --app-bg: #f5f7f6;
+  --app-text: #1f2a2e;
+  /* Chart colors (stats page). The dark values below passed the dataviz palette validator on #1b2023. */
+  --chart-bar: #13876f;
+  --chart-paid: #2a78d6;
+  --chart-share: #eb6834;
+  color-scheme: light;
+}
+
+/* Dark mode, D1 "Charcoal" (Brian, 2026-11-15). It follows the device unless Profile > Appearance picks Light or Dark
+   (a `theme` cookie; layout.tsx sets data-theme on <html> before the page paints). The same values are declared twice:
+   once for an explicit Dark choice, once for Auto on a dark device. The gray scale is flipped (gray-50 is the darkest
+   tint, gray-900 the lightest text), so existing gray utilities keep their meaning. White stays white (header text,
+   logo badge); cards use bg-surface. */
+:root[data-theme="dark"] {
+  --app-bg: #111416;
+  --app-text: #e7ecee;
+  --color-surface: #1b2023;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-gray-50: #21272a;
+  --color-gray-100: #2a3135;
+  --color-gray-200: #353d41;
+  --color-gray-300: #4a5357;
+  --color-gray-400: #7c868b;
+  --color-gray-500: #9aa4a9;
+  --color-gray-600: #b4bdc1;
+  --color-gray-700: #cdd4d7;
+  --color-gray-800: #e1e6e8;
+  --color-gray-900: #eef2f3;
+  --color-brand-50: #123129;
+  --color-brand-100: #16433a;
+  --color-brand-500: #0f8f74;
+  --color-brand-600: #34d3b1;
+  --color-brand-700: #6fe3c9;
+  --color-owe: #ff7d4d;
+  --color-amber-50: #33290f;
+  --color-amber-200: #6b5a26;
+  --color-amber-900: #f7e3a8;
+  --color-red-50: #3a1717;
+  --color-red-200: #7a2e2e;
+  --color-red-600: #ff8a8a;
+  --color-red-700: #ffa8a8;
+  --chart-bar: #199e70;
+  --chart-paid: #3987e5;
+  --chart-share: #d95926;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --app-bg: #111416;
+    --app-text: #e7ecee;
+    --color-surface: #1b2023;
+    --color-line: rgb(255 255 255 / 0.08);
+    --color-gray-50: #21272a;
+    --color-gray-100: #2a3135;
+    --color-gray-200: #353d41;
+    --color-gray-300: #4a5357;
+    --color-gray-400: #7c868b;
+    --color-gray-500: #9aa4a9;
+    --color-gray-600: #b4bdc1;
+    --color-gray-700: #cdd4d7;
+    --color-gray-800: #e1e6e8;
+    --color-gray-900: #eef2f3;
+    --color-brand-50: #123129;
+    --color-brand-100: #16433a;
+    --color-brand-500: #0f8f74;
+    --color-brand-600: #34d3b1;
+    --color-brand-700: #6fe3c9;
+    --color-owe: #ff7d4d;
+    --color-amber-50: #33290f;
+    --color-amber-200: #6b5a26;
+    --color-amber-900: #f7e3a8;
+    --color-red-50: #3a1717;
+    --color-red-200: #7a2e2e;
+    --color-red-600: #ff8a8a;
+    --color-red-700: #ffa8a8;
+    --chart-bar: #199e70;
+    --chart-paid: #3987e5;
+    --chart-share: #d95926;
+    color-scheme: dark;
+  }
+}
+
 body {
-  background: #f5f7f6;
-  color: #1f2a2e;
+  background: var(--app-bg);
+  color: var(--app-text);
 }

@@ -15,14 +15,14 @@ export function Logo({ className = "" }: { className?: string }) {
 export function Card({ className = "", ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={`rounded-2xl border border-black/5 bg-white p-5 shadow-sm ${className}`}
+      className={`rounded-2xl border border-line bg-surface p-5 shadow-sm ${className}`}
       {...props}
     />
   );
 }
 
 const fieldClass =
-  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-gray-50";
+  "w-full rounded-lg border border-gray-300 bg-surface px-3 py-2.5 text-base outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-gray-50";
 
 export function Input({ className = "", ...props }: ComponentProps<"input">) {
   return <input className={`${fieldClass} ${className}`} {...props} />;
@@ -41,10 +41,10 @@ export function Label({ className = "", ...props }: ComponentProps<"label">) {
 }
 
 const buttonVariants = {
-  primary: "bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700",
-  secondary: "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50",
+  primary: "bg-brand-500 text-white hover:brightness-95 active:brightness-90",
+  secondary: "border border-gray-300 bg-surface text-gray-800 hover:bg-gray-50",
   ghost: "text-gray-600 hover:bg-gray-100",
-  danger: "border border-red-200 bg-white text-red-600 hover:bg-red-50",
+  danger: "border border-red-200 bg-surface text-red-600 hover:bg-red-50",
   owe: "bg-owe text-white hover:brightness-95",
 };
 type Variant = keyof typeof buttonVariants;

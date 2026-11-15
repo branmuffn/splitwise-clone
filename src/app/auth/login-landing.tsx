@@ -22,7 +22,7 @@ export function LoginLanding() {
           <ButtonLink href="/start" className="w-full py-3 text-base">Start now</ButtonLink>
           <DemoButton label="✨ Try the demo first" caption={false} />
         </Card>
-        <details className="group mt-4 rounded-2xl border border-black/5 bg-white shadow-sm" open={Boolean(state?.error)}>
+        <details className="group mt-4 rounded-2xl border border-line bg-surface shadow-sm" open={Boolean(state?.error)}>
           <summary className="cursor-pointer list-none px-5 py-4 text-center text-sm text-gray-600 [&::-webkit-details-marker]:hidden">
             Have an account with an email? <span className="font-semibold text-brand-600">Sign in</span>
             <span className="ml-1 inline-block text-gray-400 transition group-open:rotate-90">›</span>

@@ -18,12 +18,24 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1cc29f",
+  // Phone status bar matches the header (darker green in dark mode, see globals.css).
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0f8f74" },
+    { color: "#1cc29f" },
+  ],
 };
+
+// Profile > Appearance stores Light or Dark in a `theme` cookie (Auto = no cookie, follow the device). Applying it here,
+// before the first paint, avoids a flash of the wrong colors. Reading it on the server would make every page dynamic.
+const themeScript = `try{var m=document.cookie.match(/(?:^|; )theme=(light|dark)/);if(m)document.documentElement.dataset.theme=m[1]}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
+    // suppressHydrationWarning: the theme script may add data-theme before React hydrates.
+    <html lang="en" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

@@ -37,7 +37,7 @@ export function InviteLink({ url, groupName }: { url: string; groupName: string 
         setDone(true);
         setTimeout(() => setDone(false), 1800);
       }}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-500 bg-white px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-500 bg-surface px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
     >
       🔗 {done ? "Link copied!" : "Copy invite link"}
     </button>

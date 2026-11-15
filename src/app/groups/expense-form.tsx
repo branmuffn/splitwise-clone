@@ -193,7 +193,7 @@ export function ExpenseForm({
             <label
               key={t.value}
               className={`cursor-pointer rounded-md px-2 py-1.5 text-center text-sm font-medium transition has-focus-visible:ring-2 has-focus-visible:ring-brand-500 ${
-                splitType === t.value ? "bg-white text-brand-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                splitType === t.value ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
               }`}
             >
               <input

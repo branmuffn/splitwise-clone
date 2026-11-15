@@ -24,9 +24,9 @@ const RANGES = [
 // Chart colors (validated with the dataviz palette checker against white):
 // single-series bars use a darker brand green (≥3:1 contrast); the two-series chart uses
 // categorical slots 1 (blue) and 2 (orange), which pass CVD and contrast checks.
-const BAR = "#13876f";
-const PAID = "#2a78d6";
-const SHARE = "#eb6834";
+const BAR = "var(--chart-bar)"; // colors live in globals.css (light + dark)
+const PAID = "var(--chart-paid)";
+const SHARE = "var(--chart-share)";
 
 async function Stats({ params, searchParams }: Pick<PageProps<"/groups/[id]/stats">, "params" | "searchParams">) {
   const { id } = await params;
@@ -84,7 +84,7 @@ async function Stats({ params, searchParams }: Pick<PageProps<"/groups/[id]/stat
               key={r.value}
               href={`/groups/${id}/stats${r.value === "all" ? "" : `?range=${r.value}`}`}
               aria-current={range === r.value ? "page" : undefined}
-              className={`rounded-md px-3 py-1 font-medium ${range === r.value ? "bg-white text-brand-700 shadow-sm" : "text-gray-600"}`}
+              className={`rounded-md px-3 py-1 font-medium ${range === r.value ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}
             >
               {r.label}
             </Link>
@@ -170,7 +170,7 @@ function Tip({ children }: { children: React.ReactNode }) {
   return (
     <span
       role="tooltip"
-      className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow group-hover:block group-focus:block"
+      className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2937] px-2 py-1 text-xs text-white shadow group-hover:block group-focus:block"
     >
       {children}
     </span>
