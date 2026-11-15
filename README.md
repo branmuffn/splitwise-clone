@@ -90,3 +90,7 @@ select public.cleanup_old_demo_accounts();
   splits, payments, and activity. Policies use the `SECURITY DEFINER` helper `is_group_member(group_id)`
   to avoid recursion on `group_members`. Joining, leaving, removing members, and regenerating codes go
   through RPCs; the activity log is written only by triggers.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
