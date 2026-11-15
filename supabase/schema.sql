@@ -138,13 +138,15 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- Name-only accounts (anonymous sign-in, "Start now", 2026-11-15) have no email: store '' and use the given name.
   insert into public.profiles (id, email, display_name)
   values (
     new.id,
-    new.email,
+    coalesce(new.email, ''),
     coalesce(
       nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''),
-      split_part(new.email, '@', 1)
+      nullif(split_part(coalesce(new.email, ''), '@', 1), ''),
+      'Friend'
     )
   )
   on conflict (id) do nothing;
