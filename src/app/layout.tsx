@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // The page shrinks when the phone keyboard opens, so a focused box is never hidden behind it (Brian, 2026-11-22).
+  interactiveWidget: "resizes-content",
   // Phone status bar matches the header (darker green in dark mode, see globals.css).
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0f8f74" },
