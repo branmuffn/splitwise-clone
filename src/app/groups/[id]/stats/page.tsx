@@ -262,7 +262,7 @@ function PairedBars({ people, fmt }: { people: { id: string; name: string; paid:
 function DataTable({ head, rows }: { head: string[]; rows: string[][] }) {
   return (
     <details className="mt-4 text-sm">
-      <summary className="cursor-pointer text-xs font-semibold text-brand-600">Show as table</summary>
+      <summary className="-my-2.5 cursor-pointer py-2.5 text-xs font-semibold text-brand-600">Show as table</summary>
       <table className="mt-2 w-full text-left">
         <thead className="text-xs text-gray-500">
           <tr>{head.map((h, i) => <th key={h} className={`py-1 font-medium ${i ? "text-right" : ""}`}>{h}</th>)}</tr>

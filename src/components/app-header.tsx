@@ -37,7 +37,7 @@ async function DemoBanner() {
         </span>{" "}
         <form action={signOut} className="inline">
           <input type="hidden" name="next" value="/signup" />
-          <button type="submit" className="font-semibold underline">Create a real account</button>
+          <button type="submit" className="-my-2.5 py-2.5 font-semibold underline">Create a real account</button>
         </form>
       </div>
     </div>

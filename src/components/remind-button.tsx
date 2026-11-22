@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { mailtoHref, type Reminder } from "@/lib/remind";
+import { copyText } from "@/lib/copy";
 
 // Remind (no email service needed). With an email: a drafted email opens in the user's own mail app (works without
 // JavaScript). Without one (name-only accounts, stand-ins): phones open the share sheet (Messages, WhatsApp...) with the
@@ -26,11 +27,10 @@ export function RemindButton({ name, email, reminder, className = "" }: { name: 
         if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
           try { await navigator.share({ title: reminder.subject, text: reminder.body }); return; } catch { /* closed: copy instead */ }
         }
-        try {
-          await navigator.clipboard.writeText(reminder.body);
+        if (await copyText(reminder.body)) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1800);
-        } catch { /* clipboard blocked: nothing else to do */ }
+        }
       }}
     >
       {copied ? "Copied!" : "Remind"}

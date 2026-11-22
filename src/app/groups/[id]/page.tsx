@@ -111,7 +111,7 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
               <InviteLink url={`${origin}/join/${group.join_code}`} groupName={group.name} />
               <CopyCode code={group.join_code} />
             </div>
-            <Link href={`/groups/${id}/settings#add-person`} className="mt-1.5 inline-block text-sm font-medium text-brand-600 hover:underline">+ Add people by name</Link>
+            <Link href={`/groups/${id}/settings#add-person`} className="mt-1.5 -my-2 inline-block py-2 text-sm font-medium text-brand-600 hover:underline">+ Add people by name</Link>
           </div>
         </div>
         {/* Phones (Brian picked S2, 2026-11-14): Add expense moves to the round + button, Settle up goes full width, and
@@ -351,7 +351,7 @@ function Ledger({ data, filters, keepView, filterQuery }: { data: GroupData; fil
     <section className="space-y-3">
       <SectionTitle
         action={
-          <a href={`/groups/${group.id}/export${filterQuery ? `?${filterQuery}` : ""}`} className="text-xs font-semibold text-brand-600 hover:underline" download>
+          <a href={`/groups/${group.id}/export${filterQuery ? `?${filterQuery}` : ""}`} className="-my-2.5 inline-block py-2.5 text-xs font-semibold text-brand-600 hover:underline" download>
             ⬇ Export CSV
           </a>
         }
