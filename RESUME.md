@@ -8,7 +8,7 @@ A plain-language guide to stopping, restarting, and finding everything for the S
 
 | Part | What it is | Link / location | When you'll need it |
 |---|---|---|---|
-| **This folder** | All the code, plus your Supabase keys in `.env.local` | `~/fc/splitwise-clone` on this Mac | Every time. Always start Claude here. |
+| **This folder** | All the code, plus your Supabase keys in `.env.local` | `~/Projects/splitwise-clone` on the M14 | Every time. Always start Claude here. |
 | **GitHub** | A backup of the code. Pushing to it publishes the site | https://github.com/branmuffn/splitwise-clone | Rarely. Claude pushes for you. |
 | **Vercel** | Hosts the live website | https://split-tea.vercel.app (dashboard: https://vercel.com, project `splitwise-clone`) | Only if a deploy fails or you change settings. |
 | **Supabase** | Database, logins, receipt photos, live updates | https://supabase.com/dashboard, project `tvtlsgeenqftstbqhotv` | When Claude asks you to run SQL or change a setting. |
@@ -49,7 +49,7 @@ select public.cleanup_old_demo_accounts();
 1. Open **Terminal**.
 2. Run:
    ```
-   cd ~/fc/splitwise-clone
+   cd ~/Projects/splitwise-clone
    claude
    ```
    Starting in this folder is what makes Claude automatically read `CLAUDE.md`, the project's

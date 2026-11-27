@@ -104,6 +104,19 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
   (dark values validated with the dataviz palette validator). Primary buttons hover with `brightness`, not brand-600.
 - Tests: `tests/e2e/friends.mjs` (22 checks) in `npm run test:e2e`; unit tests `friends.test.ts`, `remind.test.ts`.
 
+## Look and touch rules (2026-11-27 review, Brian picked M1 A / M3 / M5 A / M6 A)
+
+- **Colors:** brand teal `#0e7a63` (500 and 600) and orange `--color-owe: #c9461b` so white text on them and teal/orange
+  text on white pass 4.5:1 (the old #1cc29f / #17a689 / #ff652f were 2.3-3.1:1). Dark mode: teal fills `#0c7360`; orange
+  stays light for text, and `.bg-owe` buttons get `#c9461b` (unlayered rule in `globals.css`). Check contrast when adding colors.
+- **Confirms:** `ActionButton`'s `confirmText` opens the app's own small `<dialog>` (question, Cancel, the action's
+  label; Esc, tap outside, Cancel close it). Never `window.confirm` / `alert`.
+- **Icons:** `Chevron` in `src/components/ui.tsx` (left/right/down); never typed ‹ › ▸. Every `<summary>` hides the
+  browser marker (`list-none [&::-webkit-details-marker]:hidden`).
+- **Tap areas:** small links and chips get `tap-pad` (a bigger invisible area on touch screens, same look; `globals.css`).
+- **Empty amounts:** show `$0.00` (`formatMoney(0, currency)`) in grey, never a dash; no em dashes in visible text.
+- **Names:** the name truncates but "(you)", "creator" and "not joined yet" are `shrink-0` siblings, always visible.
+
 ## Architecture
 
 - `src/lib/`: pure, unit-tested logic: `money.ts` (minor units per currency via Intl),
@@ -125,7 +138,8 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
 
 ## Gotchas learned the hard way
 
-- **Next.js 16** differs from older docs: `middleware.ts` became `proxy.ts`, `cookies()` and
+- **Next.js 16.4.6** (2026-11-27 security update; a first local build may stop once with an upgrade notice, rerun it)
+  differs from older docs: `middleware.ts` became `proxy.ts`, `cookies()` and
   `params` are async, and the bundled docs are in `node_modules/next/dist/docs/`. Cache Components
   are deliberately OFF (`next.config.ts`).
 - **Never `.bind()` a server action inside a client component.** It made no-JS form posts that
@@ -145,9 +159,9 @@ Deploy = `git push` (Vercel builds `main`). Manual fallback: `npx vercel --prod 
 ## End-to-end tests (`tests/e2e/`)
 
 They submit the real HTML forms (as a browser with JS off would) as several fake users against a
-running site and the **real** Supabase project: `core.mjs` (earlier features, ~59 checks) and
-`extras.mjs` (v3 features incl. receipts and Realtime, ~48 checks), and `demo.mjs` (one-click
-demo, 15 checks).
+running site and the **real** Supabase project: `core.mjs`, `extras.mjs` (receipts, Realtime), `demo.mjs`,
+`nameonly.mjs`, `standins.mjs`, `friends.mjs`: 193 checks in all (2026-11-27). Counts of buttons by label must skip
+closed `<dialog>`s (the confirm sheet repeats the label).
 `SITE=https://split-tea.vercel.app npm run test:e2e` runs them against
 production. They create users named `claude-e2e-*@example.com`; clean up with this in the SQL
 Editor (cascades to their groups and data):
@@ -160,10 +174,11 @@ Parsing notes: streamed HTML arrives in pieces (`helpers.mjs` `assemble()` stitc
 segments), and every page contains Next's hidden "could not be found" template, so detect a real
 404 with `isNotFound()`.
 
-## Current status (as of 2026-10-16)
+## Current status (as of 2026-11-27)
 
-- **Everything below is built, deployed, and passing** on the live site: core e2e (59 checks),
-  extras e2e (48 checks), demo e2e (15 checks), 23 unit-test groups, and the SQL permission tests.
+- **Everything below is built, deployed, and passing**: e2e 193 checks (6 files), 40 unit tests, and the SQL
+  permission tests. Later additions: Start now / invite links / stand-ins, Friends + Remind, dark mode (2026-11-15);
+  the 2026-11-27 look and touch fixes above.
   - Demo Day follow-up: one-click demo login (see "One-click demo" above).
   - v1: auth, groups with join codes, equal-split expenses, balances.
   - v2: custom splits, multi-currency, categories, edit/delete, payments, activity, group
@@ -193,6 +208,6 @@ Ask the user which they want; don't start unprompted.
 2. **Friends**: DONE 2026-11-15 (F1). Still open: 1-on-1 expenses outside groups (like Splitwise's Friends tab). Simplest model:
    an implicit two-person group per friend pair.
 3. **Installable PWA** (Brian said no for now, 2026-11-15): web app manifest, icons, and an offline view of balances.
-4. **Polish**: dark mode DONE 2026-11-15; still open: avatars/profile photos (Storage), and an "undo delete" for expenses.
+4. **Polish**: dark mode DONE 2026-11-15; in-app confirm DONE 2026-11-27; still open: avatars/profile photos (Storage), and an "undo delete" for expenses.
 5. **CI**: a GitHub Action running `npm test`, lint, build, and the e2e suite against a Vercel
    preview deployment on each pull request.
