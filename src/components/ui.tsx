@@ -98,10 +98,21 @@ export function Avatar({ name, id, size = "md" }: { name: string; id: string; si
   );
 }
 
+// A drawn chevron (SP-06, 2026-11-27: typed ‹ and the browser's ▶ looked different in every font). 1em, text color.
+export function Chevron({ dir = "right", className = "" }: { dir?: "left" | "right" | "down"; className?: string }) {
+  const d = { left: "M15 5l-7 7 7 7", right: "M9 5l7 7-7 7", down: "M5 9l7 7 7-7" }[dir];
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"
+      strokeLinejoin="round" aria-hidden className={`inline-block shrink-0 align-[-0.125em] ${className}`}>
+      <path d={d} />
+    </svg>
+  );
+}
+
 export function BackLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="inline-block text-sm font-medium text-brand-600 hover:underline max-sm:-my-2.5 max-sm:py-2.5 max-sm:text-base">
-      ‹ {children}
+    <Link href={href} className="tap-pad inline-flex items-center gap-0.5 text-sm font-medium text-brand-600 hover:underline max-sm:-my-2.5 max-sm:py-2.5 max-sm:text-base">
+      <Chevron dir="left" /> {children}
     </Link>
   );
 }

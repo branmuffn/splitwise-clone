@@ -63,7 +63,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
     }
   }
   const list = (m: Map<string, number>) =>
-    m.size === 0 ? <span className="text-gray-400">—</span> : [...m].map(([c, v]) => <span key={c} className="block">{formatMoney(v, c)}</span>);
+    m.size === 0 ? <span className="text-gray-400">{formatMoney(0, user.defaultCurrency)}</span> : [...m].map(([c, v]) => <span key={c} className="block">{formatMoney(v, c)}</span>);
 
   // One approximate overall number in the user's default currency, when there's more than one currency.
   const home = user.defaultCurrency;

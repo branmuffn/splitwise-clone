@@ -3,10 +3,12 @@
 @theme {
   --color-brand-50: #ecfbf6;
   --color-brand-100: #d1f5e8;
-  --color-brand-500: #1cc29f;
-  --color-brand-600: #17a689;
-  --color-brand-700: #13876f;
-  --color-owe: #ff652f;
+  /* SP-01 (Brian picked M1 A, 2026-11-27): darker teal and orange so white text on them and teal/orange text on
+     white are readable (5.3:1 and 4.8:1; the old #1cc29f / #17a689 / #ff652f were 2.3-3.1:1). */
+  --color-brand-500: #0e7a63;
+  --color-brand-600: #0e7a63;
+  --color-brand-700: #0b6b59;
+  --color-owe: #c9461b;
   /* Cards, inputs and active toggles (bg-surface), and their hairline borders (border-line). */
   --color-surface: #ffffff;
   --color-line: rgb(0 0 0 / 0.05);
@@ -45,7 +47,7 @@
   --color-gray-900: #eef2f3;
   --color-brand-50: #123129;
   --color-brand-100: #16433a;
-  --color-brand-500: #0f8f74;
+  --color-brand-500: #0c7360;
   --color-brand-600: #34d3b1;
   --color-brand-700: #6fe3c9;
   --color-owe: #ff7d4d;
@@ -79,7 +81,7 @@
     --color-gray-900: #eef2f3;
     --color-brand-50: #123129;
     --color-brand-100: #16433a;
-    --color-brand-500: #0f8f74;
+    --color-brand-500: #0c7360;
     --color-brand-600: #34d3b1;
     --color-brand-700: #6fe3c9;
     --color-owe: #ff7d4d;
@@ -100,4 +102,16 @@
 body {
   background: var(--app-bg);
   color: var(--app-text);
+}
+
+/* SP-01 dark: the orange stays light for text on the dark background, but a button painted orange gets the darker
+   orange so its white label is readable (4.8:1). Unlayered, so it wins over the utility. */
+:root[data-theme="dark"] .bg-owe { background-color: #c9461b }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bg-owe { background-color: #c9461b } }
+
+/* SP-03 (2026-11-27): small controls get a bigger invisible tap area on touch screens (tablets and sideways phones
+   too, where the phone-only padding doesn't apply). Same look; neighbours are far enough apart not to overlap. */
+@media (pointer: coarse) {
+  .tap-pad { position: relative }
+  .tap-pad::after { content: ""; position: absolute; inset: -8px -4px }
 }

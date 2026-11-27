@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { startNameOnly } from "../auth/actions";
-import { Button, Card, FormMessage, Input, Label, Logo } from "@/components/ui";
+import { Button, Card, Chevron, FormMessage, Input, Label, Logo } from "@/components/ui";
 
 // "Start now": just a name. Creates a name-only account that lives in this browser (see startNameOnly).
 export function StartForm() {
@@ -29,7 +29,7 @@ export function StartForm() {
           </p>
         </Card>
         <p className="mt-4 text-center text-sm">
-          <Link href="/login" className="text-brand-600 hover:underline">‹ Back</Link>
+          <Link href="/login" className="inline-flex items-center gap-0.5 text-brand-600 hover:underline"><Chevron dir="left" /> Back</Link>
         </p>
       </div>
     </main>

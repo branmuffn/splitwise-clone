@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { ActionButton } from "@/components/action-button";
 import { LiveRefresh } from "@/components/live-refresh";
 import { PageShell } from "@/components/page-shell";
-import { Avatar, ButtonLink, Card, FormMessage, Input, Label, SectionTitle, Select, formatDate } from "@/components/ui";
+import { Avatar, BackLink, ButtonLink, Card, FormMessage, Input, Label, SectionTitle, Select, formatDate } from "@/components/ui";
 import { simplifiedTransfers, type Transfer } from "@/lib/balances";
 import { CATEGORIES, categoryOf } from "@/lib/categories";
 import { convertBalances } from "@/lib/convert";
@@ -90,7 +90,7 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
   return (
     <>
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-sm font-medium text-brand-600 hover:underline max-sm:-my-2.5 max-sm:py-2.5 max-sm:text-base">‹ All groups</Link>
+        <BackLink href="/">All groups</BackLink>
         <LiveRefresh groupId={id} />
       </div>
       {notice && <FormMessage state={{ message: notice }} />}
@@ -131,10 +131,10 @@ async function GroupDetail({ params, searchParams }: Pick<PageProps<"/groups/[id
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-gray-500">Show balances:</span>
           <div className="inline-flex rounded-lg bg-gray-100 p-1">
-            <Link href={`/groups/${id}${filterQuery ? `?${filterQuery}` : ""}`} className={`rounded-md px-3 py-1 font-medium ${!view.converted ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}>
+            <Link href={`/groups/${id}${filterQuery ? `?${filterQuery}` : ""}`} className={`tap-pad rounded-md px-3 py-1 font-medium ${!view.converted ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}>
               By currency
             </Link>
-            <Link href={`/groups/${id}?view=converted${filterQuery ? `&${filterQuery}` : ""}`} className={`rounded-md px-3 py-1 font-medium ${view.converted ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}>
+            <Link href={`/groups/${id}?view=converted${filterQuery ? `&${filterQuery}` : ""}`} className={`tap-pad rounded-md px-3 py-1 font-medium ${view.converted ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}>
               All in {group.default_currency}
             </Link>
           </div>
@@ -191,10 +191,10 @@ function Balances({ data, view }: { data: GroupData; view: BalanceView }) {
             <div key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
               <span className="flex min-w-0 items-center gap-3">
                 <Avatar name={m.name} id={m.id} />
-                <span className="truncate">
-                  {m.name}
-                  {m.id === user.id && <span className="text-gray-400"> (you)</span>}
-                  {m.standin && <span className="ml-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
+                <span className="flex min-w-0 items-baseline gap-1">
+                  <span className="truncate">{m.name}</span>
+                  {m.id === user.id && <span className="shrink-0 text-gray-400">(you)</span>}
+                  {m.standin && <span className="ml-0.5 shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
                 </span>
               </span>
               <span className="shrink-0 text-right text-sm">
@@ -254,10 +254,10 @@ function Suggested({ data, view, origin }: { data: GroupData; view: BalanceView;
                         name={debtor.name}
                         email={debtor.email}
                         reminder={remind}
-                        className="rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm"
+                        className="tap-pad rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm"
                       />
                     )}
-                    <Link href={settleUrl} className="rounded-md px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm">
+                    <Link href={settleUrl} className="tap-pad rounded-md px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 max-sm:inline-flex max-sm:min-h-10 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-current max-sm:px-3.5 max-sm:text-sm">
                       Record
                     </Link>
                   </span>

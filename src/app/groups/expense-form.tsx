@@ -183,7 +183,7 @@ export function ExpenseForm({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-semibold">Split</h2>
           {(splitType === "percent" || splitType === "shares") && (
-            <button type="button" onClick={fillEvenly} className="text-sm font-medium text-brand-600 hover:underline">
+            <button type="button" onClick={fillEvenly} className="tap-pad text-sm font-medium text-brand-600 hover:underline">
               Fill evenly
             </button>
           )}
@@ -289,9 +289,9 @@ export function ExpenseForm({
                   />
                 ) : null}
                 <Avatar name={m.name} id={m.id} />
-                <label htmlFor={splitType === "equal" ? `include_${m.id}` : `value_${m.id}`} className="min-w-0 flex-1 truncate">
-                  {m.name}
-                  {m.id === currentUserId && <span className="text-gray-400"> (you)</span>}
+                <label htmlFor={splitType === "equal" ? `include_${m.id}` : `value_${m.id}`} className="flex min-w-0 flex-1 items-baseline gap-1">
+                  <span className="truncate">{m.name}</span>
+                  {m.id === currentUserId && <span className="shrink-0 text-gray-400">(you)</span>}
                 </label>
                 {splitType !== "equal" && !itemized && (
                   <span className="flex items-center gap-1.5">
@@ -307,8 +307,8 @@ export function ExpenseForm({
                     <span className="w-14 text-xs text-gray-500">{splitType === "exact" ? currency : valueSuffix[splitType]}</span>
                   </span>
                 )}
-                <span className={`w-20 shrink-0 text-right text-sm tabular-nums ${share ? "text-gray-800" : "text-gray-300"}`}>
-                  {share !== null ? formatMoney(share, currency) : "—"}
+                <span className={`w-20 shrink-0 text-right text-sm tabular-nums ${share ? "text-gray-800" : "text-gray-400"}`}>
+                  {formatMoney(share ?? 0, currency)}
                 </span>
               </li>
             );

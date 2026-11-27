@@ -123,7 +123,8 @@ await step("comments", async () => {
   r = await B.submit(receiptExpense, "body", { body: "Thanks for grabbing this! 🙏" });
   check("Bob comments", r.text.includes("Thanks for grabbing this! 🙏"));
   r = await A.get(receiptExpense);
-  const deleteButtons = (r.html.match(/>\s*Delete\s*<\/button>/g) ?? []).length;
+  // the in-app confirm sheet (SP-02) repeats the label inside a closed <dialog>: count only the visible buttons
+  const deleteButtons = (r.html.replace(/<dialog[\s\S]*?<\/dialog>/g, "").match(/>\s*Delete\s*<\/button>/g) ?? []).length;
   check("Alice sees comment but no delete for Bob's comment", r.text.includes("Thanks for grabbing this!") && deleteButtons === 1, `delete buttons: ${deleteButtons}`);
   r = await A.get(g);
   check("comment count badge", r.text.includes("💬1"));

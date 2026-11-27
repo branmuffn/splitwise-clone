@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/page-shell";
-import { BackLink, Card, SectionTitle, formatDate } from "@/components/ui";
+import { BackLink, Card, Chevron, SectionTitle, formatDate } from "@/components/ui";
 import { CATEGORIES } from "@/lib/categories";
 import { convertMinor } from "@/lib/convert";
 import { loadGroup } from "@/lib/group-data";
@@ -84,7 +84,7 @@ async function Stats({ params, searchParams }: Pick<PageProps<"/groups/[id]/stat
               key={r.value}
               href={`/groups/${id}/stats${r.value === "all" ? "" : `?range=${r.value}`}`}
               aria-current={range === r.value ? "page" : undefined}
-              className={`rounded-md px-3 py-1 font-medium ${range === r.value ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}
+              className={`tap-pad rounded-md px-3 py-1 font-medium ${range === r.value ? "bg-surface text-brand-700 shadow-sm" : "text-gray-600"}`}
             >
               {r.label}
             </Link>
@@ -100,7 +100,7 @@ async function Stats({ params, searchParams }: Pick<PageProps<"/groups/[id]/stat
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Tile label="Total spent" value={fmt(total)} />
         <Tile label="Expenses" value={String(rows.length)} />
-        <Tile label="Top category" value={top ? `${top.icon} ${top.label}` : "—"} className="col-span-2 sm:col-span-1" />
+        <Tile label="Top category" value={top ? `${top.icon} ${top.label}` : "None yet"} className="col-span-2 sm:col-span-1" />
       </div>
 
       {rows.length === 0 ? (
@@ -262,7 +262,7 @@ function PairedBars({ people, fmt }: { people: { id: string; name: string; paid:
 function DataTable({ head, rows }: { head: string[]; rows: string[][] }) {
   return (
     <details className="mt-4 text-sm">
-      <summary className="-my-2.5 cursor-pointer py-2.5 text-xs font-semibold text-brand-600">Show as table</summary>
+      <summary className="-my-2.5 inline-flex cursor-pointer list-none items-center gap-1 py-2.5 text-xs font-semibold text-brand-600 [&::-webkit-details-marker]:hidden"><Chevron className="transition-transform [details[open]_&]:rotate-90" /> Show as table</summary>
       <table className="mt-2 w-full text-left">
         <thead className="text-xs text-gray-500">
           <tr>{head.map((h, i) => <th key={h} className={`py-1 font-medium ${i ? "text-right" : ""}`}>{h}</th>)}</tr>

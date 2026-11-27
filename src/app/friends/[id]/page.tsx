@@ -79,7 +79,7 @@ async function FriendDetail({ params }: Pick<PageProps<"/friends/[id]">, "params
               <div key={g.groupId} className="px-5 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <span className="min-w-0">
-                    <Link href={`/groups/${g.groupId}`} className="block truncate font-medium hover:underline">{g.groupName}</Link>
+                    <Link href={`/groups/${g.groupId}`} className="block truncate font-medium hover:underline pointer-coarse:-my-2 pointer-coarse:py-2">{g.groupName}</Link>
                     <span className="text-xs text-gray-500">{g.memberCount} {g.memberCount === 1 ? "member" : "members"}</span>
                   </span>
                   <span className="shrink-0 text-right text-sm">
