@@ -188,20 +188,23 @@ function Balances({ data, view }: { data: GroupData; view: BalanceView }) {
         {members.map((m) => {
           const lines = view.rows.get(m.id) ?? [];
           return (
-            <div key={m.id} className="flex items-center justify-between gap-3 px-5 py-3">
-              <span className="flex min-w-0 items-center gap-3">
+            /* T25 (Brian, 2026-11-28): "Alex (demo) … (you)" was cut while the row edges sat empty. Tighter edges on
+               phones, the amount's "gets back" / "owes" sits small above the number (a narrow column), and a long
+               name wraps to a second line instead of "…". */
+            <div key={m.id} className="flex items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-5">
+              <span className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 <Avatar name={m.name} id={m.id} />
-                <span className="flex min-w-0 items-baseline gap-1">
-                  <span className="truncate">{m.name}</span>
-                  {m.id === user.id && <span className="shrink-0 text-gray-400">(you)</span>}
-                  {m.standin && <span className="ml-0.5 shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
+                <span className="min-w-0 break-words leading-snug">
+                  {m.name}
+                  {m.id === user.id && <span className="whitespace-nowrap text-gray-400"> (you)</span>}
+                  {m.standin && <span className="ml-1 inline-block whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
                 </span>
               </span>
-              <span className="shrink-0 text-right text-sm">
+              <span className="shrink-0 text-right text-sm leading-tight">
                 {lines.length === 0 && <span className="text-gray-400">settled up</span>}
                 {lines.map(({ cur, cents }) => (
-                  <span key={cur} className={`block ${cents > 0 ? "text-brand-600" : "text-owe"}`}>
-                    {cents > 0 ? "gets back " : "owes "}
+                  <span key={cur} className={`block ${cents > 0 ? "text-brand-600" : "text-owe"} [&+&]:mt-1`}>
+                    <span className="block text-xs">{cents > 0 ? "gets back" : "owes"}</span>
                     <span className="font-semibold">{view.converted && "≈"}{formatMoney(Math.abs(cents), cur)}</span>
                   </span>
                 ))}

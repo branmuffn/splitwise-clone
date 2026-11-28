@@ -69,11 +69,11 @@ async function Settings({ params, searchParams }: Pick<PageProps<"/groups/[id]/s
               <div key={m.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                 <Avatar name={m.name} id={m.id} />
                 <div className="min-w-0 flex-1">
-                  <p className="flex min-w-0 items-baseline font-medium">
-                    <span className="truncate">{m.name}</span>
-                    {m.id === user.id && <span className="ml-1 shrink-0 text-gray-400">(you)</span>}
-                    {m.id === group.created_by && <span className="ml-2 shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">creator</span>}
-                    {m.standin && <span className="ml-2 shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
+                  <p className="min-w-0 break-words font-medium leading-snug">
+                    {m.name}
+                    {m.id === user.id && <span className="whitespace-nowrap text-gray-400"> (you)</span>}
+                    {m.id === group.created_by && <span className="ml-2 inline-block whitespace-nowrap rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">creator</span>}
+                    {m.standin && <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">not joined yet</span>}
                   </p>
                   <p className="truncate text-xs text-gray-500">
                     {m.standin ? "added by name" : m.email || "no email (name only)"}

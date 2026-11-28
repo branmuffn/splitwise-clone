@@ -289,9 +289,9 @@ export function ExpenseForm({
                   />
                 ) : null}
                 <Avatar name={m.name} id={m.id} />
-                <label htmlFor={splitType === "equal" ? `include_${m.id}` : `value_${m.id}`} className="flex min-w-0 flex-1 items-baseline gap-1">
-                  <span className="truncate">{m.name}</span>
-                  {m.id === currentUserId && <span className="shrink-0 text-gray-400">(you)</span>}
+                <label htmlFor={splitType === "equal" ? `include_${m.id}` : `value_${m.id}`} className="min-w-0 flex-1 break-words leading-snug">
+                  {m.name}
+                  {m.id === currentUserId && <span className="whitespace-nowrap text-gray-400"> (you)</span>}
                 </label>
                 {splitType !== "equal" && !itemized && (
                   <span className="flex items-center gap-1.5">

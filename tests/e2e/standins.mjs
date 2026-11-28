@@ -11,8 +11,9 @@ let r, g, code, ids = {};
 const bal = (t, name) => {
   const seg = t.split("Balances")[1]?.split(/Suggested payments|Who owes whom/)[0] ?? "";
   // Visible text runs together ("E2E Samnot joined yetowes $15.00E"), so read the first amount after the name.
-  const m = new RegExp(`${name}(?:\\s*\\(you\\))?(?:\\s*not joined yet)?\\s*((?:gets back|owes) [^\\d]*[\\d,]+\\.\\d{2}|settled up)`).exec(seg);
-  return m?.[1]?.trim() ?? "";
+  // T25 (2026-11-28): "gets back" / "owes" now sits on its own line above the amount, so no space may follow it.
+  const m = new RegExp(`${name}(?:\\s*\\(you\\))?(?:\\s*not joined yet)?\\s*(?:(gets back|owes)\\s*([^\\d]*[\\d,]+\\.\\d{2})|(settled up))`).exec(seg);
+  return m ? (m[3] ?? `${m[1]} ${m[2].trim()}`) : "";
 };
 const addPerson = async (who, name) => {
   const page = await who.get(`${g}/settings`);
